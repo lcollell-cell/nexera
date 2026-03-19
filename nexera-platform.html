@@ -588,13 +588,211 @@ tr:hover td{background:var(--glass);}
 /* ═══════════════════════════════════════════════════════════
    RESPONSIVE
 ═══════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════
+   HAMBURGER BUTTON (hidden on desktop)
+══════════════════════════════════════════════════════ */
+.hamburger{
+  display:none;
+  flex-direction:column;justify-content:center;align-items:center;
+  gap:5px;width:36px;height:36px;cursor:pointer;
+  background:transparent;border:none;padding:4px;flex-shrink:0;
+  order:-1;
+}
+.hamburger span{
+  display:block;width:20px;height:2px;
+  background:var(--text-primary);border-radius:2px;
+  transition:all 0.25s ease;transform-origin:center;
+}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0);}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+
+/* ══════════════════════════════════════════════════════
+   MOBILE MENU OVERLAY
+══════════════════════════════════════════════════════ */
+.mobile-menu-overlay{
+  display:none;position:fixed;inset:0;z-index:998;
+  background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);
+}
+.mobile-menu-overlay.open{display:block;}
+
+/* ══════════════════════════════════════════════════════
+   MOBILE DRAWER
+══════════════════════════════════════════════════════ */
+.mobile-drawer{
+  position:fixed;top:0;left:-100%;width:80%;max-width:300px;height:100%;
+  z-index:999;background:var(--surface-2);
+  border-right:1px solid var(--glass-border);
+  display:flex;flex-direction:column;
+  transition:left 0.3s ease;overflow-y:auto;
+  padding-bottom:40px;
+}
+.mobile-drawer.open{left:0;}
+.mobile-drawer-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;border-bottom:1px solid var(--glass-border);
+  min-height:60px;flex-shrink:0;
+}
+.mobile-drawer-logo{
+  display:flex;align-items:center;gap:10px;
+  font-family:var(--font-display);font-weight:800;font-size:16px;
+}
+.mobile-drawer-close{
+  background:transparent;border:none;color:var(--text-secondary);
+  font-size:18px;cursor:pointer;padding:4px;line-height:1;
+}
+.mobile-nav-section{
+  padding:16px 20px 6px;
+  font-size:9px;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;color:var(--text-muted);
+  font-family:var(--font-display);
+}
+.mobile-nav-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 20px;font-size:14px;font-weight:500;
+  color:var(--text-secondary);font-family:var(--font-display);
+  background:transparent;border:none;width:100%;text-align:left;
+  cursor:pointer;transition:all 0.15s;border-left:3px solid transparent;
+}
+.mobile-nav-item:hover,.mobile-nav-item.active{
+  color:var(--text-primary);
+  background:rgba(0,194,168,0.06);
+  border-left-color:var(--accent);
+}
+.mobile-nav-item .mobile-nav-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--glass-border);flex-shrink:0;
+}
+.mobile-nav-item.active .mobile-nav-dot{background:var(--accent);}
+.mobile-nav-divider{
+  height:1px;background:var(--glass-border);margin:8px 20px;
+}
+.mobile-lang-row{
+  padding:16px 20px;
+  display:flex;align-items:center;gap:10px;
+}
+.mobile-lang-label{
+  font-size:11px;color:var(--text-muted);font-family:var(--font-display);
+}
+
+/* Light mode drawer */
+body.theme-light .mobile-drawer{background:#fff;border-right-color:rgba(10,37,64,0.1);}
+body.theme-light .mobile-drawer-header{border-bottom-color:rgba(10,37,64,0.1);}
+body.theme-light .mobile-nav-item{color:rgba(45,74,106,0.75);}
+body.theme-light .mobile-nav-item:hover{background:rgba(0,130,120,0.06);color:#0A2540;}
+
 @media(max-width:768px){
-  .navbar{padding:0 20px;}
-  .nav-links{display:none;}
-  .section{padding:90px 20px 40px;}
-  .content-row{grid-template-columns:1fr;}
-  .form-row{grid-template-columns:1fr;}
-  .chat-panel{width:calc(100vw - 32px);right:16px;}
+  /* ── Navbar ── */
+  .navbar{padding:0 16px !important;height:56px !important;}
+  .hamburger{display:flex !important;}
+  .nav-links{display:none !important;}
+  .nav-actions{gap:4px !important;}
+  .lang-select{font-size:10px !important;padding:3px 6px !important;}
+  .nav-logo{font-size:15px !important;}
+  .nav-logo img{width:30px !important;height:30px !important;}
+
+  /* ── Barra secundaria ── */
+  .nav-section-bar{
+    top:56px !important;
+    height:36px !important;
+    padding:0 12px !important;
+    gap:0 !important;
+  }
+  .section-bar-label{display:none !important;}
+  .nav-section-tab{
+    font-size:10px !important;
+    padding:3px 9px !important;
+  }
+
+  /* ── Sections ── */
+  .section{padding:106px 16px 48px !important;}
+  #section-home{padding-top:0 !important;}
+  #section-auth{padding-top:0 !important;}
+  #section-registro{padding-top:0 !important;}
+
+  /* ── Hero ── */
+  .hero{padding:100px 20px 48px !important;min-height:auto !important;}
+  .hero-title{font-size:clamp(28px,8vw,44px) !important;letter-spacing:-1px !important;}
+  .hero-sub{font-size:14px !important;margin:0 auto 18px !important;}
+  .hero-pills{gap:5px !important;margin-bottom:24px !important;}
+  .hero-pill{font-size:10px !important;padding:3px 10px !important;}
+  .hero-ctas{flex-direction:column !important;align-items:stretch !important;gap:8px !important;margin-bottom:36px !important;}
+  .btn-hero{padding:13px 20px !important;font-size:13px !important;text-align:center;justify-content:center;}
+  .btn-hero-brochure{text-align:center;justify-content:center;}
+  .stats-row{gap:20px !important;flex-wrap:wrap;}
+  .stat-num{font-size:24px !important;}
+  .stat-label{font-size:10px !important;}
+
+  /* ── Section headers ── */
+  .section-header{margin-bottom:32px !important;}
+  .section-title{font-size:clamp(20px,6vw,28px) !important;}
+  .section-desc{font-size:13px !important;}
+
+  /* ── Dashboard KPI grid ── */
+  .dashboard-grid{grid-template-columns:1fr 1fr !important;gap:12px !important;}
+  .kpi-value{font-size:24px !important;}
+
+  /* ── Content rows ── */
+  .content-row{grid-template-columns:1fr !important;}
+  .form-row{grid-template-columns:1fr !important;}
+
+  /* ── Calc grid ── */
+  .calc-grid{grid-template-columns:1fr !important;gap:12px !important;}
+  .calc-card{padding:20px !important;}
+
+  /* ── Role tabs (auth) ── */
+  .role-tabs{grid-template-columns:repeat(3,1fr) !important;gap:6px !important;}
+
+  /* ── Chat panel ── */
+  .chatbot-btn{bottom:16px !important;right:16px !important;width:48px !important;height:48px !important;font-size:20px !important;}
+  .chat-panel{
+    width:100vw !important;height:75vh !important;
+    bottom:0 !important;right:0 !important;left:0 !important;
+    border-radius:var(--radius-lg) var(--radius-lg) 0 0 !important;
+    border-bottom:none !important;
+  }
+
+  /* ── Auth & Registro ── */
+  .auth-container{padding:70px 16px 40px !important;}
+  .auth-card{padding:24px 20px !important;}
+
+  /* ── Somos NexERA inline grids ── */
+  [style*="grid-template-columns:1fr 1fr"],[style*="grid-template-columns: 1fr 1fr"]{
+    grid-template-columns:1fr !important;
+  }
+  [style*="grid-template-columns:1fr 1fr 1fr"],[style*="grid-template-columns:repeat(3"]{
+    grid-template-columns:1fr 1fr !important;
+  }
+  [style*="grid-template-columns:repeat(4"]{
+    grid-template-columns:1fr 1fr !important;
+  }
+
+  /* ── Noticias precios ── */
+  #noticias-grid{grid-template-columns:1fr !important;}
+
+  /* ── Contacto form ── */
+  [style*="grid-template-columns:1fr 1fr;gap:32px"]{grid-template-columns:1fr !important;}
+
+  /* ── Modal ── */
+  .modal{margin:0 8px;max-height:85vh;}
+  .modal-header{padding:20px !important;}
+  .modal-body{padding:20px !important;}
+
+  /* ── Features grid ── */
+  .features-grid{grid-template-columns:1fr !important;}
+
+  /* ── Toast ── */
+  .toast-container{right:8px !important;left:8px !important;}
+  .toast{min-width:auto !important;}
+
+  /* ── Hide desktop-only elements ── */
+  .nav-more-wrap{display:none !important;}
+}
+
+@media(max-width:400px){
+  .dashboard-grid{grid-template-columns:1fr !important;}
+  .role-tabs{grid-template-columns:repeat(2,1fr) !important;}
+  [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr !important;}
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -803,6 +1001,248 @@ body.theme-light .nav-section-bar{
 body.theme-light .hero-pill{background:rgba(10,37,64,0.06);border-color:rgba(10,37,64,0.15);color:var(--text-secondary);}
 body.theme-light .hero-pill:hover{background:rgba(0,130,120,0.1);border-color:rgba(0,130,120,0.25);color:var(--accent);}
 
+
+/* ═══════════════════════════════════════════════════════════
+   PROFESSIONAL REFINEMENTS — override
+═══════════════════════════════════════════════════════════ */
+
+/* Navbar — más refinada */
+.navbar{
+  height:60px !important;
+  padding:0 32px !important;
+  background:rgba(8,18,32,0.96) !important;
+  border-bottom:1px solid rgba(255,255,255,0.07) !important;
+}
+.nav-logo{gap:12px !important;font-size:17px !important;}
+.nav-logo img{width:36px !important;height:36px !important;}
+
+/* Nav links — tipografía sobria */
+.nav-links{gap:0 !important;}
+.nav-link{
+  padding:6px 13px !important;
+  font-size:12.5px !important;
+  font-weight:500 !important;
+  letter-spacing:0.2px;
+  color:rgba(230,237,243,0.7) !important;
+  border-radius:6px !important;
+}
+.nav-link:hover{
+  color:rgba(230,237,243,1) !important;
+  background:rgba(255,255,255,0.06) !important;
+}
+.nav-link.active{
+  color:#fff !important;
+  background:rgba(0,194,168,0.12) !important;
+  border-bottom:2px solid var(--accent);
+  border-radius:6px 6px 0 0 !important;
+}
+
+/* Dropdown más elegante */
+.nav-more-btn{
+  font-weight:500 !important;
+  font-size:12.5px !important;
+  letter-spacing:0.2px;
+  color:rgba(230,237,243,0.7) !important;
+}
+.nav-more-dropdown{
+  min-width:160px !important;
+  border-radius:8px !important;
+  padding:4px !important;
+  border:1px solid rgba(255,255,255,0.1) !important;
+  background:rgba(13,31,53,0.98) !important;
+  backdrop-filter:blur(24px) !important;
+}
+.nav-more-item{
+  font-size:12px !important;
+  font-weight:500 !important;
+  color:rgba(230,237,243,0.75) !important;
+  padding:8px 14px !important;
+  border-radius:6px !important;
+  letter-spacing:0.1px;
+}
+.nav-more-item:hover{
+  color:#fff !important;
+  background:rgba(255,255,255,0.08) !important;
+}
+.nav-more-divider{background:rgba(255,255,255,0.08) !important;}
+
+/* Segunda barra — más delgada y refinada */
+.nav-section-bar{
+  height:32px !important;
+  top:60px !important;
+  background:rgba(8,18,32,0.88) !important;
+  border-bottom:1px solid rgba(255,255,255,0.05) !important;
+  padding:0 32px !important;
+  gap:2px !important;
+}
+.section-bar-label{
+  font-size:9px !important;
+  letter-spacing:1.5px !important;
+  text-transform:uppercase;
+  color:rgba(255,255,255,0.28) !important;
+  padding-right:12px !important;
+  border-right:1px solid rgba(255,255,255,0.08) !important;
+  margin-right:4px !important;
+}
+.nav-section-tab{
+  font-size:11px !important;
+  font-weight:500 !important;
+  padding:3px 12px !important;
+  border-radius:4px !important;
+  color:rgba(230,237,243,0.5) !important;
+  letter-spacing:0.2px;
+}
+.nav-section-tab:hover{
+  color:rgba(230,237,243,0.9) !important;
+  background:rgba(255,255,255,0.06) !important;
+}
+.nav-section-tab.active{
+  color:var(--accent) !important;
+  background:rgba(0,194,168,0.1) !important;
+}
+
+/* Lang select más sobrio */
+.lang-select{
+  font-size:11px !important;
+  padding:4px 8px !important;
+  border-radius:6px !important;
+  background:rgba(255,255,255,0.06) !important;
+  border:1px solid rgba(255,255,255,0.1) !important;
+}
+
+/* Ajustar secciones para la nueva altura del navbar */
+.section{padding-top:110px !important;}
+.section[style*="padding:0"]{padding-top:0 !important;}
+#section-auth{padding-top:0 !important;}
+#section-registro{padding-top:0 !important;}
+
+/* Hero — más espacio limpio */
+.hero{padding:108px 40px 60px !important;}
+
+/* Hero badge — sobria, sin pulso */
+.hero-badge{
+  background:rgba(0,194,168,0.06) !important;
+  border:1px solid rgba(0,194,168,0.2) !important;
+  font-size:11px !important;
+  letter-spacing:1px !important;
+  font-weight:500 !important;
+  margin-bottom:28px !important;
+  padding:5px 18px !important;
+}
+.hero-badge::before{display:none !important;}
+
+/* Hero title — ligeramente más pequeño para no aplastar */
+.hero-title{
+  font-size:clamp(36px,5vw,68px) !important;
+  letter-spacing:-1.5px !important;
+  margin-bottom:20px !important;
+}
+
+/* Hero sub — máx ancho y mejor legibilidad */
+.hero-sub{
+  font-size:15px !important;
+  max-width:620px !important;
+  margin:0 auto 20px !important;
+  color:rgba(139,164,190,0.9) !important;
+  line-height:1.8 !important;
+}
+
+/* Pills — más sutiles y minimalistas */
+.hero-pill{
+  font-size:10.5px !important;
+  font-weight:500 !important;
+  padding:4px 14px !important;
+  letter-spacing:0.4px !important;
+  background:rgba(255,255,255,0.04) !important;
+  border:1px solid rgba(255,255,255,0.1) !important;
+  color:rgba(139,164,190,0.8) !important;
+}
+.hero-pill:hover{
+  background:rgba(0,194,168,0.08) !important;
+  border-color:rgba(0,194,168,0.25) !important;
+  color:rgba(0,194,168,0.9) !important;
+}
+.hero-pills{gap:6px !important;margin-bottom:32px !important;}
+
+/* Botones hero — más sobrios */
+.btn-hero{
+  padding:12px 28px !important;
+  font-size:13px !important;
+  font-weight:600 !important;
+  border-radius:8px !important;
+  letter-spacing:0.2px;
+}
+.btn-hero-primary{
+  background:var(--accent) !important;
+  color:#000 !important;
+  box-shadow:none !important;
+}
+.btn-hero-primary:hover{
+  background:#00b89e !important;
+  box-shadow:0 4px 20px rgba(0,194,168,0.25) !important;
+  transform:none !important;
+}
+.btn-hero-secondary{
+  background:transparent !important;
+  border:1px solid rgba(255,255,255,0.18) !important;
+  color:rgba(230,237,243,0.85) !important;
+}
+.btn-hero-secondary:hover{
+  border-color:rgba(255,255,255,0.35) !important;
+  background:rgba(255,255,255,0.05) !important;
+}
+.btn-hero-brochure{
+  background:transparent !important;
+  border:1px solid rgba(0,194,168,0.4) !important;
+  color:var(--accent) !important;
+  box-shadow:none !important;
+}
+.btn-hero-brochure:hover{
+  background:rgba(0,194,168,0.08) !important;
+  transform:none !important;
+  opacity:1 !important;
+}
+.hero-ctas{gap:10px !important;margin-bottom:48px !important;}
+
+/* Stats row — más sobria */
+.stat-num{font-size:28px !important;}
+.stat-label{font-size:11px !important;letter-spacing:0.5px;}
+.stats-row{gap:40px !important;}
+
+/* Section headers */
+.section-eyebrow{
+  font-size:10px !important;
+  letter-spacing:2.5px !important;
+  color:var(--accent) !important;
+  margin-bottom:10px !important;
+}
+.section-title{
+  font-size:clamp(24px,3vw,36px) !important;
+  letter-spacing:-0.5px !important;
+  margin-bottom:14px !important;
+}
+.section-desc{font-size:15px !important;}
+.section-header{margin-bottom:48px !important;}
+
+/* Botones generales */
+.btn-primary{font-weight:600 !important;letter-spacing:0.2px;}
+.btn-outline{font-weight:600 !important;letter-spacing:0.2px;}
+.btn-calc{font-weight:600 !important;letter-spacing:0.2px;}
+
+/* Light mode refinements */
+body.theme-light .navbar{background:rgba(248,250,252,0.97) !important;border-bottom:1px solid rgba(10,37,64,0.08) !important;}
+body.theme-light .nav-link{color:rgba(45,74,106,0.75) !important;}
+body.theme-light .nav-link:hover{color:rgba(10,37,64,1) !important;background:rgba(10,37,64,0.05) !important;}
+body.theme-light .nav-link.active{color:var(--accent) !important;}
+body.theme-light .nav-section-bar{background:rgba(240,244,248,0.96) !important;border-bottom:1px solid rgba(10,37,64,0.06) !important;}
+body.theme-light .nav-section-tab{color:rgba(45,74,106,0.55) !important;}
+body.theme-light .nav-section-tab:hover{color:rgba(10,37,64,0.9) !important;}
+body.theme-light .nav-more-dropdown{background:rgba(248,250,252,0.99) !important;border:1px solid rgba(10,37,64,0.1) !important;}
+body.theme-light .nav-more-item{color:rgba(45,74,106,0.8) !important;}
+body.theme-light .hero-pill{background:rgba(10,37,64,0.04) !important;border-color:rgba(10,37,64,0.1) !important;color:rgba(45,74,106,0.7) !important;}
+body.theme-light .hero-sub{color:rgba(45,74,106,0.75) !important;}
+body.theme-light .hero-badge{background:rgba(0,130,120,0.06) !important;border-color:rgba(0,130,120,0.2) !important;}
+
 </style>
 </head>
 <body>
@@ -826,6 +1266,10 @@ body.theme-light .hero-pill:hover{background:rgba(0,130,120,0.1);border-color:rg
     <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAkACQAAD/4QLiRXhpZgAATU0AKgAAAAgABAE7AAIAAAAIAAABSodpAAQAAAABAAABUpydAAEAAAAQAAACyuocAAcAAAEMAAAAPgAAAAAc6gAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATGVhbmRybwAABZADAAIAAAAUAAACoJAEAAIAAAAUAAACtJKRAAIAAAADNjYAAJKSAAIAAAADNjYAAOocAAcAAAEMAAABlAAAAAAc6gAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMjAyNjowMzoxOCAyMjo1ODoyNAAyMDI2OjAzOjE4IDIyOjU4OjI0AAAATABlAGEAbgBkAHIAbwAAAP/hBBpodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvADw/eHBhY2tldCBiZWdpbj0n77u/JyBpZD0nVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkJz8+DQo8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIj48cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPjxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSJ1dWlkOmZhZjViZGQ1LWJhM2QtMTFkYS1hZDMxLWQzM2Q3NTE4MmYxYiIgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIi8+PHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9InV1aWQ6ZmFmNWJkZDUtYmEzZC0xMWRhLWFkMzEtZDMzZDc1MTgyZjFiIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iPjx4bXA6Q3JlYXRlRGF0ZT4yMDI2LTAzLTE4VDIyOjU4OjI0LjY1NjwveG1wOkNyZWF0ZURhdGU+PC9yZGY6RGVzY3JpcHRpb24+PHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9InV1aWQ6ZmFmNWJkZDUtYmEzZC0xMWRhLWFkMzEtZDMzZDc1MTgyZjFiIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iPjxkYzpjcmVhdG9yPjxyZGY6U2VxIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+PHJkZjpsaT5MZWFuZHJvPC9yZGY6bGk+PC9yZGY6U2VxPg0KCQkJPC9kYzpjcmVhdG9yPjwvcmRmOkRlc2NyaXB0aW9uPjwvcmRmOlJERj48L3g6eG1wbWV0YT4NCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA8P3hwYWNr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" alt="NexERA" style="height:40px;width:40px;object-fit:cover;border-radius:50%;display:block;flex-shrink:0;">
     <div class="logo-text">Nex<span>ERA</span></div>
   </div>
+  <!-- HAMBURGER (mobile only) -->
+  <button class="hamburger" id="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Menú">
+    <span></span><span></span><span></span>
+  </button>
   <div class="nav-links" id="nav-links-main">
     <button class="nav-link active" onclick="showSection('home')" data-i18n="nav_home">Inicio</button>
     <button class="nav-link" onclick="showSection('somos')" data-i18n="nav_somos">Somos NexERA</button>
@@ -835,28 +1279,16 @@ body.theme-light .hero-pill:hover{background:rgba(0,130,120,0.1);border-color:rg
     <!-- DROPDOWN "Más" -->
     <div class="nav-more-wrap" id="nav-more-wrap">
       <button class="nav-link nav-more-btn" onclick="toggleNavMore(event)" id="nav-more-btn">
-        Herramientas ▾
+        Herramientas  ▾
       </button>
       <div class="nav-more-dropdown" id="nav-more-dropdown">
-        <button class="nav-more-item" onclick="showSection('calculators');closeNavMore()" data-i18n="nav_calculadoras">
-          🧮 Calculadoras
-        </button>
-        <button class="nav-more-item" onclick="showSection('files');closeNavMore()" data-i18n="nav_archivos">
-          📂 Archivos
-        </button>
-        <button class="nav-more-item" onclick="showSection('audit');closeNavMore()" data-i18n="nav_auditoria">
-          📋 Auditoría
-        </button>
-        <button class="nav-more-item" onclick="showSection('features');closeNavMore()" data-i18n="nav_funciones">
-          ⭐ Funciones
-        </button>
+        <button class="nav-more-item" onclick="showSection('calculators');closeNavMore()" data-i18n="nav_calculadoras">Calculadoras</button>
+        <button class="nav-more-item" onclick="showSection('files');closeNavMore()" data-i18n="nav_archivos">Archivos</button>
+        <button class="nav-more-item" onclick="showSection('audit');closeNavMore()" data-i18n="nav_auditoria">Auditoría</button>
+        <button class="nav-more-item" onclick="showSection('features');closeNavMore()" data-i18n="nav_funciones">Funciones</button>
         <div class="nav-more-divider"></div>
-        <button class="nav-more-item" onclick="showSection('registro');closeNavMore()" data-i18n="nav_registro">
-          📝 Registro
-        </button>
-        <button class="nav-more-item" onclick="showSection('auth');closeNavMore()">
-          🔐 Iniciar Sesión
-        </button>
+        <button class="nav-more-item" onclick="showSection('registro');closeNavMore()" data-i18n="nav_registro">Registro</button>
+        <button class="nav-more-item" onclick="showSection('auth');closeNavMore()">Iniciar Sesión</button>
       </div>
     </div>
   </div>
@@ -874,12 +1306,12 @@ body.theme-light .hero-pill:hover{background:rgba(0,130,120,0.1);border-color:rg
 <!-- SEGUNDA BARRA DE NAVEGACIÓN (secciones de herramientas) -->
 <div class="nav-section-bar" id="nav-section-bar">
   <span class="section-bar-label">Herramientas</span>
-  <button class="nav-section-tab" onclick="showSection('calculators')" id="stab-calculators" data-i18n="nav_calculadoras">🧮 Calculadoras</button>
-  <button class="nav-section-tab" onclick="showSection('files')" id="stab-files" data-i18n="nav_archivos">📂 Archivos</button>
-  <button class="nav-section-tab" onclick="showSection('audit')" id="stab-audit" data-i18n="nav_auditoria">📋 Auditoría</button>
-  <button class="nav-section-tab" onclick="showSection('features')" id="stab-features" data-i18n="nav_funciones">⭐ Funciones</button>
-  <button class="nav-section-tab" onclick="showSection('registro')" id="stab-registro" data-i18n="nav_registro">📝 Registro</button>
-  <button class="nav-section-tab" onclick="showSection('auth')" id="stab-auth">🔐 Sesión</button>
+  <button class="nav-section-tab" onclick="showSection('calculators')" id="stab-calculators" data-i18n="nav_calculadoras">Calculadoras</button>
+  <button class="nav-section-tab" onclick="showSection('files')" id="stab-files" data-i18n="nav_archivos">Archivos</button>
+  <button class="nav-section-tab" onclick="showSection('audit')" id="stab-audit" data-i18n="nav_auditoria">Auditoría</button>
+  <button class="nav-section-tab" onclick="showSection('features')" id="stab-features" data-i18n="nav_funciones">Funciones</button>
+  <button class="nav-section-tab" onclick="showSection('registro')" id="stab-registro" data-i18n="nav_registro">Registro</button>
+  <button class="nav-section-tab" onclick="showSection('auth')" id="stab-auth">Sesión</button>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════
@@ -890,7 +1322,7 @@ body.theme-light .hero-pill:hover{background:rgba(0,130,120,0.1);border-color:rg
   <!-- HERO SECTION -->
   <section id="section-home" class="section active" style="padding:0">
     <div class="hero">
-      <div class="hero-badge" data-i18n="hero_badge">🌱 Energy Transition Intelligence Platform</div>
+      <div class="hero-badge" data-i18n="hero_badge">Energy Transition Intelligence Platform</div>
       <h1 class="hero-title">
         <span data-i18n="hero_title1">La plataforma líder para</span><br>
         <span data-i18n="hero_title2">OIL &amp; GAS y Transición Energética</span>
@@ -899,16 +1331,16 @@ body.theme-light .hero-pill:hover{background:rgba(0,130,120,0.1);border-color:rg
         Inteligencia de datos al servicio de la industria energética. Evaluamos recursos, certificamos reservas y aceleramos la transición energética con herramientas de Data Science, calculadoras especializadas y auditoría técnica — todo en una sola plataforma.
       </p>
       <div class="hero-pills">
-        <span class="hero-pill">⛽ OIL &amp; GAS</span>
-        <span class="hero-pill">📊 Data Science</span>
-        <span class="hero-pill">🌱 Transición Energética</span>
-        <span class="hero-pill">📋 Auditoría ESG</span>
-        <span class="hero-pill">🤖 IA &amp; Machine Learning</span>
+        <span class="hero-pill">OIL &amp; GAS</span>
+        <span class="hero-pill">Data Science</span>
+        <span class="hero-pill">Transición Energética</span>
+        <span class="hero-pill">Auditoría ESG</span>
+        <span class="hero-pill">IA &amp; Machine Learning</span>
       </div>
       <div class="hero-ctas">
-        <a href="Brochure_Empresarial_MOD.pdf" download="NexERA_Brochure_Servicios.pdf" type="application/pdf" class="btn-hero btn-hero-brochure" id="btn-brochure" data-i18n="btn_brochure">📋 Nuestros Servicios — Brochure PDF</a>
-        <button class="btn-hero btn-hero-primary" id="btn-explorar" onclick="showSection('calculators')" data-i18n="btn_calc">🚀 Explorar Calculadoras</button>
-        <button class="btn-hero btn-hero-secondary" id="btn-dashboard" onclick="showSection('dashboard')" data-i18n="btn_dash">📊 Ver Dashboard</button>
+        <a href="Brochure_Empresarial_MOD.pdf" download="NexERA_Brochure_Servicios.pdf" type="application/pdf" class="btn-hero btn-hero-brochure" id="btn-brochure" data-i18n="btn_brochure">Nuestros Servicios — Brochure</a>
+        <button class="btn-hero btn-hero-primary" id="btn-explorar" onclick="showSection('calculators')" data-i18n="btn_calc">Explorar Calculadoras</button>
+        <button class="btn-hero btn-hero-secondary" id="btn-dashboard" onclick="showSection('dashboard')" data-i18n="btn_dash">Ver Dashboard</button>
       </div>
       <div class="stats-row">
         <div class="stat-item"><div class="stat-num">21</div><div class="stat-label">Calculadoras</div></div>
@@ -934,13 +1366,13 @@ body.theme-light .hero-pill:hover{background:rgba(0,130,120,0.1);border-color:rg
     <!-- HERO NEXERA -->
     <div style="background:linear-gradient(135deg,var(--surface-2),var(--surface-3));border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:40px;margin-bottom:32px;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;">
       <div>
-        <div style="display:inline-flex;align-items:center;gap:10px;background:rgba(0,194,168,0.12);border:1px solid rgba(0,194,168,0.3);border-radius:100px;padding:6px 16px;font-size:12px;color:var(--accent);font-weight:600;letter-spacing:1px;margin-bottom:20px;">🌱 CONSULTORA ENERGÉTICA ESPECIALIZADA</div>
+        <div style="display:inline-flex;align-items:center;gap:10px;background:rgba(0,194,168,0.12);border:1px solid rgba(0,194,168,0.3);border-radius:100px;padding:6px 16px;font-size:12px;color:var(--accent);font-weight:600;letter-spacing:1px;margin-bottom:20px;">CONSULTORA ENERGÉTICA ESPECIALIZADA</div>
         <h3 style="font-family:var(--font-display);font-size:32px;font-weight:800;line-height:1.2;margin-bottom:16px;">NexERA ET<br><span style="color:var(--accent);">Consulting</span></h3>
         <p style="color:var(--text-secondary);line-height:1.8;margin-bottom:20px;">Somos una firma independiente que ofrece asesoría técnica y estratégica especializada para afrontar los retos actuales del sector energético. Integramos Innovación, eficiencia y sostenibilidad.</p>
         <p style="color:var(--text-secondary);line-height:1.8;">Nuestro enfoque se adapta a los nuevos modelos de negocio, cumpliendo con marcos regulatorios y estándares internacionales.</p>
         <div style="margin-top:24px;display:flex;gap:12px;flex-wrap:wrap;">
-          <a href="Brochure_Empresarial_MOD.pdf" download="NexERA_Brochure_Servicios.pdf" type="application/pdf" style="display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;padding:12px 24px;border-radius:var(--radius);font-weight:700;font-size:14px;text-decoration:none;transition:opacity 0.2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">📥 Descargar Brochure PDF</a>
-          <button onclick="showSection('contacto')" style="display:inline-flex;align-items:center;gap:8px;background:transparent;border:1px solid var(--glass-border);color:var(--text-primary);padding:12px 24px;border-radius:var(--radius);font-weight:600;font-size:14px;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">📩 Contáctanos</button>
+          <a href="Brochure_Empresarial_MOD.pdf" download="NexERA_Brochure_Servicios.pdf" type="application/pdf" style="display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;padding:12px 24px;border-radius:var(--radius);font-weight:700;font-size:14px;text-decoration:none;transition:opacity 0.2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Descargar Brochure</a>
+          <button onclick="showSection('contacto')" style="display:inline-flex;align-items:center;gap:8px;background:transparent;border:1px solid var(--glass-border);color:var(--text-primary);padding:12px 24px;border-radius:var(--radius);font-weight:600;font-size:14px;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">Contáctanos</button>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
@@ -1133,7 +1565,7 @@ body.theme-light .hero-pill:hover{background:rgba(0,130,120,0.1);border-color:rg
       </div>
     </div>
     <div style="font-size:11px;color:var(--text-muted);text-align:center;margin-bottom:24px;padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;">
-      ⚠️ Precios orientativos actualizados. Para precios exactos en tiempo real consultar: <a href="https://www.eia.gov" target="_blank" style="color:var(--accent);">EIA.gov</a> · <a href="https://www.investing.com/commodities/crude-oil" target="_blank" style="color:var(--accent);">Investing.com</a> · <a href="https://oilprice.com" target="_blank" style="color:var(--accent);">OilPrice.com</a>
+      Nota: Precios orientativos actualizados. Para precios exactos en tiempo real consultar: <a href="https://www.eia.gov" target="_blank" style="color:var(--accent);">EIA.gov</a> · <a href="https://www.investing.com/commodities/crude-oil" target="_blank" style="color:var(--accent);">Investing.com</a> · <a href="https://oilprice.com" target="_blank" style="color:var(--accent);">OilPrice.com</a>
     </div>
 
     <!-- NOTICIAS -->
@@ -1230,7 +1662,7 @@ body.theme-light .hero-pill:hover{background:rgba(0,130,120,0.1);border-color:rg
           <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600;">CONSULTA *</label>
           <textarea id="ctc-mensaje" rows="5" style="width:100%;background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius);padding:10px 14px;color:var(--text-primary);font-size:14px;outline:none;transition:border-color 0.2s;resize:vertical;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--glass-border)'">Buenas tardes, quiero información de sus servicios. Mi contacto es </textarea>
         </div>
-        <button onclick="enviarContacto()" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);padding:14px;font-size:15px;font-weight:700;transition:opacity 0.2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">📩 Enviar a <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="61080f070e210f0419041300020e0f12140d15080f064f020e0c">[email&#160;protected]</a></button>
+        <button onclick="enviarContacto()" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);padding:14px;font-size:15px;font-weight:700;transition:opacity 0.2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Enviar a <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="61080f070e210f0419041300020e0f12140d15080f064f020e0c">[email&#160;protected]</a></button>
         <div id="ctc-status" style="margin-top:12px;text-align:center;font-size:13px;min-height:20px;"></div>
       </div>
       <!-- INFO CONTACTO -->
@@ -1411,9 +1843,9 @@ body.theme-light .hero-pill:hover{background:rgba(0,130,120,0.1);border-color:rg
       <button class="calc-cat-btn" onclick="filterCalcs('reservoir',this)">🏗️ Reservorio</button>
       <button class="calc-cat-btn" onclick="filterCalcs('energy',this)">🌱 Energy Transition</button>
       <button class="calc-cat-btn" onclick="filterCalcs('ambiental',this)">🌍 Ambiental</button>
-      <button class="calc-cat-btn" onclick="filterCalcs('esg',this)">📊 ESG</button>
+      <button class="calc-cat-btn" onclick="filterCalcs('esg',this)">ESG</button>
       <button class="calc-cat-btn" onclick="filterCalcs('methane',this)">🔥 Metano & Flaring</button>
-      <button class="calc-cat-btn" onclick="filterCalcs('units',this)">🔄 Conversión</button>
+      <button class="calc-cat-btn" onclick="filterCalcs('units',this)">Conversión</button>
     </div>
     <div class="calc-grid" id="calcGrid">
       <!-- Populated by JS -->
@@ -1665,8 +2097,8 @@ body.theme-light .hero-pill:hover{background:rgba(0,130,120,0.1);border-color:rg
         <button class="btn-calc" onclick="doLogin()" data-i18n="nav_login">Iniciar Sesión</button>
         <div class="divider">o continuar con</div>
         <div class="social-btns">
-          <button class="social-btn" onclick="toast('info','Redirigiendo a Google...')">🔑 Google</button>
-          <button class="social-btn" onclick="toast('info','Redirigiendo a Microsoft...')">💼 Microsoft</button>
+          <button class="social-btn" onclick="toast('info','Redirigiendo a Google...')">Google</button>
+          <button class="social-btn" onclick="toast('info','Redirigiendo a Microsoft...')">Microsoft</button>
         </div>
         <p style="text-align:center;font-size:13px;color:var(--text-muted);margin-top:20px">
           ¿No tienes cuenta? <a onclick="showSection('registro')" style="color:var(--accent);font-weight:600;cursor:pointer;text-decoration:underline;">Registrarse →</a>
@@ -1757,7 +2189,7 @@ body.theme-light .hero-pill:hover{background:rgba(0,130,120,0.1);border-color:rg
           ✅ Crear Cuenta y Descargar Registro
         </button>
         <p style="text-align:center;font-size:11px;color:var(--text-muted);margin-bottom:16px;">
-          📄 Tus datos se guardarán en un archivo CSV para gestión interna.
+          Los datos quedarán almacenados para gestión interna.
         </p>
         <div id="reg-status" style="text-align:center;font-size:13px;min-height:20px;margin-bottom:12px;"></div>
 
@@ -1936,11 +2368,10 @@ document.addEventListener('click', function(e) {
 const herramientas = ['calculators','files','audit','features','registro','auth'];
 const mainSections = ['home','somos','dashboard','noticias','contacto'];
 
-// Override showSection para actualizar tabs activos
-const _origShowSection = showSection;
-function showSection(id) {
-  _origShowSection(id);
-  updateNavState(id);
+// Patch showSection para actualizar estado nav (no override recursivo)
+const _origShowSection_nav = typeof showSection === 'function' ? showSection : null;
+if (_origShowSection_nav) {
+  window._showSectionPatched = true;
 }
 
 function updateNavState(id) {
@@ -1984,6 +2415,62 @@ function updateNavState(id) {
 
 // Init: detectar sección activa al cargar
 document.addEventListener('DOMContentLoaded', () => updateNavState('home'));
+
+
+// ════════════════════════════════════════════════════════
+// MOBILE MENU
+// ════════════════════════════════════════════════════════
+function toggleMobileMenu() {
+  const drawer  = document.getElementById('mobile-drawer');
+  const overlay = document.getElementById('mobile-overlay');
+  const burger  = document.getElementById('hamburger-btn');
+  const isOpen  = drawer.classList.contains('open');
+  if (isOpen) {
+    drawer.classList.remove('open');
+    overlay.classList.remove('open');
+    burger.classList.remove('open');
+    document.body.style.overflow = '';
+  } else {
+    drawer.classList.add('open');
+    overlay.classList.add('open');
+    burger.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeMobileMenu() {
+  document.getElementById('mobile-drawer')?.classList.remove('open');
+  document.getElementById('mobile-overlay')?.classList.remove('open');
+  document.getElementById('hamburger-btn')?.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function mobileNav(id) {
+  closeMobileMenu();
+  setTimeout(() => showSection(id), 80);
+  // Update active state in drawer
+  document.querySelectorAll('.mobile-nav-item').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.mobile-nav-item').forEach(b => {
+    if (b.getAttribute('onclick')?.includes("'" + id + "'")) b.classList.add('active');
+  });
+}
+
+// Close drawer on resize to desktop
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 768) closeMobileMenu();
+});
+
+// Sync mobile lang select with desktop
+const desktopLangSel = document.querySelector('.navbar .lang-select');
+const mobileLangSels = document.querySelectorAll('.mobile-drawer .lang-select');
+if (desktopLangSel) {
+  mobileLangSels.forEach(sel => {
+    sel.value = desktopLangSel.value;
+    sel.addEventListener('change', () => {
+      desktopLangSel.value = sel.value;
+    });
+  });
+}
 
 </script><script>
 // ═══════════════════════════════════════════════════════════
@@ -2048,10 +2535,12 @@ const auditData = [
 // ═══════════════════════════════════════════════════════════
 function showSection(id){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.getElementById('section-'+id).classList.add('active');
+  const targetSection = document.getElementById('section-'+id);
+  if(targetSection) targetSection.classList.add('active');
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
-  event?.target?.classList?.add('active');
   window.scrollTo(0,0);
+  if(typeof updateNavState === 'function') updateNavState(id);
+  closeNavMore();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2774,7 +3263,7 @@ const chatResponses={
   'archivos':['Para subir archivos en NexERA:\n1. Ve al módulo Archivos\n2. Arrastra tus archivos o haz clic en la zona de upload\n3. Los formatos soportados son: PDF, Excel, CSV, DOCX\n4. El sistema procesa automáticamente y extrae metadatos 📂'],
   'hidrógeno':['La calculadora de Hidrógeno Verde calcula:\n\nH₂ = Potencia (kW) × Eficiencia × Horas / 39.4 kWh/kg\n\nTambién calcula el costo por kg según el precio de la electricidad. ¡Ideal para proyectos de electrólisis! 💧⚡'],
   'auditoría':['El módulo de Auditoría registra 30+ tipos de eventos:\n• LOGIN/LOGOUT\n• Cálculos realizados\n• Archivos subidos/descargados\n• Cambios de configuración\n\nPuedes exportar el log en CSV con filtros por fecha, usuario y tipo de evento 📋'],
-  'default':['Puedo ayudarte con:\n• 🧮 Calculadoras especializadas (OOIP, ESG, CO₂, H₂)\n• 📂 Gestión de archivos y reportes\n• 📋 Módulo de auditoría y trazabilidad\n• 🌱 Métricas de transición energética\n\n¿Sobre qué necesitas más información?'],
+  'default':['Puedo ayudarte con:\n• Calculadoras especializadas (OOIP, ESG, CO₂, H₂)\n• 📂 Gestión de archivos y reportes\n• 📋 Módulo de auditoría y trazabilidad\n• 🌱 Métricas de transición energética\n\n¿Sobre qué necesitas más información?'],
 };
 function getResponse(msg){
   const m=msg.toLowerCase();
@@ -2848,8 +3337,8 @@ const translations = {
     hero_title2:'OIL &amp; GAS y Transición Energética',
     hero_sub:'Inteligencia de datos al servicio de la industria energética. Evaluamos recursos, certificamos reservas y aceleramos la transición energética con herramientas de Data Science, calculadoras especializadas y auditoría técnica — todo en una sola plataforma.',
     btn_brochure:'📋 Nuestros Servicios — Brochure',
-    btn_calc:'🚀 Explorar Calculadoras',
-    btn_dash:'📊 Ver Dashboard',
+    btn_calc:'Explorar Calculadoras',
+    btn_dash:'Ver Dashboard',
     // Section headers
     sec_somos_ey:'Quiénes Somos', sec_somos_t:'Somos NexERA', sec_somos_d:'Consultora especializada en Recursos Energéticos — Soluciones energéticas integrales',
     sec_news_ey:'Sector Energético', sec_news_t:'Noticias OIL & GAS', sec_news_d:'Precios de mercado en tiempo real y últimas noticias del sector',
@@ -2876,9 +3365,9 @@ const translations = {
     hero_title1:'The leading platform for',
     hero_title2:'OIL &amp; GAS and Energy Transition',
     hero_sub:'Data intelligence at the service of the energy industry. We assess resources, certify reserves and accelerate the energy transition with Data Science tools, specialized calculators and technical auditing — all in one platform.',
-    btn_brochure:'📋 Our Services — Brochure',
-    btn_calc:'🚀 Explore Calculators',
-    btn_dash:'📊 View Dashboard',
+    btn_brochure:'Our Services — Brochure',
+    btn_calc:'Explore Calculators',
+    btn_dash:'View Dashboard',
     sec_somos_ey:'Who We Are', sec_somos_t:'About NexERA', sec_somos_d:'Specialized consultancy in Energy Resources — Comprehensive energy solutions',
     sec_news_ey:'Energy Sector', sec_news_t:'OIL & GAS News', sec_news_d:'Real-time market prices and latest sector news',
     sec_ctc_ey:'Get in Touch', sec_ctc_t:'Contact', sec_ctc_d:'Fill in the form and we will get back to you shortly',
@@ -2902,9 +3391,9 @@ const translations = {
     hero_title1:'La plateforme leader pour',
     hero_title2:'OIL &amp; GAS et Transition Énergétique',
     hero_sub:'Intelligence des données au service de l'industrie énergétique. Nous évaluons les ressources, certifions les réserves et accélérons la transition énergétique avec des outils Data Science, des calculateurs spécialisés et l'audit technique — tout sur une seule plateforme.',
-    btn_brochure:'📋 Nos Services — Brochure',
-    btn_calc:'🚀 Explorer les Calculateurs',
-    btn_dash:'📊 Voir le Tableau de Bord',
+    btn_brochure:'Nos Services — Brochure',
+    btn_calc:'Explorer les Calculateurs',
+    btn_dash:'Voir le Tableau de Bord',
     sec_somos_ey:'Qui Sommes-Nous', sec_somos_t:'NexERA', sec_somos_d:'Cabinet spécialisé en Ressources Énergétiques — Solutions énergétiques intégrales',
     sec_news_ey:'Secteur Énergétique', sec_news_t:'Actualités OIL & GAS', sec_news_d:'Prix du marché en temps réel et dernières nouvelles du secteur',
     sec_ctc_ey:'Parlons', sec_ctc_t:'Contact', sec_ctc_d:'Remplissez le formulaire et nous vous répondrons rapidement',
@@ -2928,9 +3417,9 @@ const translations = {
     hero_title1:'A plataforma líder para',
     hero_title2:'OIL &amp; GAS e Transição Energética',
     hero_sub:'Inteligência de dados a serviço da indústria energética. Avaliamos recursos, certificamos reservas e aceleramos a transição energética com ferramentas de Data Science, calculadoras especializadas e auditoria técnica — tudo em uma só plataforma.',
-    btn_brochure:'📋 Nossos Serviços — Brochure',
-    btn_calc:'🚀 Explorar Calculadoras',
-    btn_dash:'📊 Ver Painel',
+    btn_brochure:'Nossos Serviços — Brochure',
+    btn_calc:'Explorar Calculadoras',
+    btn_dash:'Ver Painel',
     sec_somos_ey:'Quem Somos', sec_somos_t:'Somos NexERA', sec_somos_d:'Consultora especializada em Recursos Energéticos — Soluções energéticas integrais',
     sec_news_ey:'Setor Energético', sec_news_t:'Notícias OIL & GAS', sec_news_d:'Preços de mercado em tempo real e últimas notícias do setor',
     sec_ctc_ey:'Fale Conosco', sec_ctc_t:'Contato', sec_ctc_d:'Preencha o formulário e retornamos em breve',
