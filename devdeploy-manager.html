@@ -1,0 +1,2859 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevDeploy Manager</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#080c10;--bg2:#0d1117;--bg3:#161b22;--bg4:#21262d;
+  --border:#30363d;--border2:#444c56;
+  --cyan:#00d9ff;--cyan2:#79c0ff;
+  --green:#3fb950;--green2:#56d364;
+  --yellow:#e3b341;--red:#f85149;--purple:#bc8cff;
+  --orange:#ffa657;--pink:#ff79c6;
+  --text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Space Grotesk',sans-serif;
+  --sidebar:260px;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);height:100vh;overflow:hidden;display:flex;}
+/* SIDEBAR */
+#sidebar{width:var(--sidebar);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
+.logo{padding:20px 18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#00d9ff22,#00d9ff44);border:1px solid var(--cyan);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.logo-text{font-size:15px;font-weight:700;color:var(--cyan);letter-spacing:-0.5px;}
+.logo-sub{font-size:10px;color:var(--text3);font-family:var(--mono);}
+.nav-section{padding:12px 12px 4px;font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;margin:2px 8px;border-radius:6px;cursor:pointer;transition:all .15s;font-size:13px;color:var(--text2);position:relative;}
+.nav-item:hover{background:var(--bg3);color:var(--text);}
+.nav-item.active{background:#00d9ff15;color:var(--cyan);border:1px solid #00d9ff22;}
+.nav-item .badge{margin-left:auto;font-size:10px;padding:2px 6px;border-radius:20px;font-family:var(--mono);}
+.badge-green{background:#3fb95022;color:var(--green);}
+.badge-red{background:#f8514922;color:var(--red);}
+.badge-yellow{background:#e3b34122;color:var(--yellow);}
+.badge-cyan{background:#00d9ff22;color:var(--cyan);}
+/* Status bottom */
+.sidebar-bottom{margin-top:auto;border-top:1px solid var(--border);padding:12px;}
+.server-status{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.dot-online{background:var(--green);box-shadow:0 0 6px var(--green);}
+.dot-offline{background:var(--text3);}
+.dot-private{background:var(--yellow);box-shadow:0 0 6px var(--yellow);}
+.dot-pulse{animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.status-info{flex:1;min-width:0;}
+.status-label{font-size:11px;color:var(--text2);}
+.status-url{font-size:10px;color:var(--cyan);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* MAIN */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+/* HEADER */
+#header{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:16px;flex-shrink:0;}
+.header-title{font-size:14px;font-weight:600;color:var(--text);}
+.header-sub{font-size:12px;color:var(--text3);font-family:var(--mono);}
+.header-actions{margin-left:auto;display:flex;gap:8px;align-items:center;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid;transition:all .15s;font-family:var(--sans);}
+.btn-sm{padding:4px 10px;font-size:11px;}
+.btn-primary{background:#00d9ff18;border-color:var(--cyan);color:var(--cyan);}
+.btn-primary:hover{background:#00d9ff30;}
+.btn-success{background:#3fb95018;border-color:var(--green);color:var(--green);}
+.btn-success:hover{background:#3fb95030;}
+.btn-danger{background:#f8514918;border-color:var(--red);color:var(--red);}
+.btn-danger:hover{background:#f8514930;}
+.btn-warn{background:#e3b34118;border-color:var(--yellow);color:var(--yellow);}
+.btn-warn:hover{background:#e3b34130;}
+.btn-ghost{background:transparent;border-color:var(--border2);color:var(--text2);}
+.btn-ghost:hover{background:var(--bg3);color:var(--text);}
+.btn-purple{background:#bc8cff18;border-color:var(--purple);color:var(--purple);}
+.btn-purple:hover{background:#bc8cff30;}
+/* MODE PILLS */
+.mode-pills{display:flex;gap:4px;background:var(--bg3);padding:3px;border-radius:8px;border:1px solid var(--border);}
+.mode-pill{padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;color:var(--text3);}
+.mode-pill.active-online{background:#3fb95022;color:var(--green);}
+.mode-pill.active-private{background:#e3b34122;color:var(--yellow);}
+.mode-pill.active-offline{background:#f8514918;color:var(--red);}
+/* CONTENT AREA */
+#content{flex:1;overflow:auto;padding:24px;}
+.section{display:none;}
+.section.active{display:block;}
+/* Cards */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px;}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.card-title{font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px;}
+.card-subtitle{font-size:11px;color:var(--text3);font-family:var(--mono);}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;}
+/* Metric cards */
+.metric{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;}
+.metric-val{font-size:24px;font-weight:700;color:var(--cyan);font-family:var(--mono);}
+.metric-label{font-size:11px;color:var(--text3);margin-top:4px;}
+/* Terminal */
+.terminal{background:#010409;border:1px solid var(--border);border-radius:8px;font-family:var(--mono);font-size:12px;line-height:1.6;}
+.terminal-header{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);background:#0d1117;}
+.term-dot{width:12px;height:12px;border-radius:50%;}
+.term-title{flex:1;text-align:center;font-size:11px;color:var(--text3);}
+.terminal-body{padding:14px;max-height:380px;overflow-y:auto;min-height:200px;}
+.terminal-body::-webkit-scrollbar{width:4px;}
+.terminal-body::-webkit-scrollbar-track{background:#010409;}
+.terminal-body::-webkit-scrollbar-thumb{background:var(--border2);}
+.cmd-line{margin-bottom:2px;}
+.cmd-prompt{color:var(--cyan);}
+.cmd-text{color:var(--text);}
+.cmd-out{color:var(--text2);}
+.cmd-success{color:var(--green);}
+.cmd-error{color:var(--red);}
+.cmd-warn{color:var(--yellow);}
+.cmd-info{color:var(--cyan);}
+.cmd-comment{color:var(--text3);}
+.blink{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+/* File upload */
+.upload-zone{border:2px dashed var(--border2);border-radius:10px;padding:40px;text-align:center;cursor:pointer;transition:all .2s;}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--cyan);background:#00d9ff08;}
+.upload-icon{font-size:32px;margin-bottom:12px;}
+.upload-text{font-size:14px;color:var(--text2);}
+.upload-sub{font-size:11px;color:var(--text3);margin-top:6px;font-family:var(--mono);}
+.file-list{margin-top:12px;}
+.file-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border-radius:6px;margin-bottom:6px;border:1px solid var(--border);}
+.file-icon{font-size:14px;}
+.file-name{font-size:12px;color:var(--cyan);font-family:var(--mono);flex:1;}
+.file-size{font-size:10px;color:var(--text3);}
+/* Tags/badges inline */
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-family:var(--mono);}
+.tag-green{background:#3fb95020;color:var(--green);border:1px solid #3fb95040;}
+.tag-red{background:#f8514920;color:var(--red);border:1px solid #f8514940;}
+.tag-yellow{background:#e3b34120;color:var(--yellow);border:1px solid #e3b34140;}
+.tag-cyan{background:#00d9ff15;color:var(--cyan);border:1px solid #00d9ff30;}
+.tag-purple{background:#bc8cff15;color:var(--purple);border:1px solid #bc8cff30;}
+.tag-orange{background:#ffa65715;color:var(--orange);border:1px solid #ffa65730;}
+/* Table */
+.data-table{width:100%;border-collapse:collapse;font-size:12px;}
+.data-table th{text-align:left;padding:8px 12px;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);}
+.data-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2);}
+.data-table tr:hover td{background:var(--bg3);}
+.data-table td:first-child{color:var(--text);font-family:var(--mono);}
+/* Progress bar */
+.progress{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:2px;transition:width .5s;}
+.fill-green{background:var(--green);}
+.fill-cyan{background:var(--cyan);}
+.fill-yellow{background:var(--yellow);}
+.fill-red{background:var(--red);}
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.tab{padding:8px 18px;font-size:12px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;gap:6px;}
+.tab.active{color:var(--cyan);border-bottom-color:var(--cyan);}
+.tab:hover:not(.active){color:var(--text);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+/* Input */
+.form-group{margin-bottom:14px;}
+.form-label{font-size:11px;color:var(--text3);margin-bottom:6px;display:block;font-family:var(--mono);}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--mono);outline:none;transition:border-color .15s;}
+.form-input:focus{border-color:var(--cyan);}
+.form-input::placeholder{color:var(--text3);}
+select.form-input option{background:var(--bg3);}
+/* Checkbox / Toggle */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+.toggle-label{font-size:13px;color:var(--text2);}
+.toggle-sub{font-size:11px;color:var(--text3);}
+.toggle{position:relative;width:38px;height:20px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--bg4);border-radius:20px;cursor:pointer;transition:.3s;}
+.toggle-slider:before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:var(--text3);border-radius:50%;transition:.3s;}
+.toggle input:checked+.toggle-slider{background:#00d9ff30;}
+.toggle input:checked+.toggle-slider:before{transform:translateX(18px);background:var(--cyan);}
+/* Chatbot */
+#chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;min-height:0;}
+#chat-messages::-webkit-scrollbar{width:4px;}
+#chat-messages::-webkit-scrollbar-thumb{background:var(--border2);}
+.msg{max-width:85%;animation:fadeIn .2s;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+.msg-user{align-self:flex-end;background:#00d9ff18;border:1px solid #00d9ff30;padding:10px 14px;border-radius:10px 10px 3px 10px;font-size:13px;}
+.msg-bot{align-self:flex-start;background:var(--bg3);border:1px solid var(--border);padding:10px 14px;border-radius:10px 10px 10px 3px;font-size:13px;}
+.msg-bot code{background:#010409;padding:1px 5px;border-radius:4px;font-size:11px;color:var(--cyan);font-family:var(--mono);}
+.msg-bot pre{background:#010409;padding:10px;border-radius:6px;margin:8px 0;overflow-x:auto;font-size:11px;font-family:var(--mono);color:var(--green);}
+.msg-label{font-size:10px;color:var(--text3);margin-bottom:4px;font-family:var(--mono);}
+.chat-input-area{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0;}
+#chat-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--sans);outline:none;resize:none;height:42px;}
+#chat-input:focus{border-color:var(--cyan);}
+/* GitHub tree */
+.tree-item{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:4px;cursor:pointer;font-size:12px;font-family:var(--mono);}
+.tree-item:hover{background:var(--bg3);}
+.tree-folder{color:var(--yellow);}
+.tree-file-html{color:var(--orange);}
+.tree-file-yml{color:var(--cyan);}
+.tree-file-md{color:var(--text);}
+.tree-file-json{color:var(--green);}
+.tree-file-sh{color:var(--green2);}
+.tree-indent{padding-left:20px;}
+/* Cloud tabs */
+.cloud-tab{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;font-size:12px;font-weight:600;border:1px solid var(--border);border-bottom:none;margin-right:2px;transition:all .15s;}
+.cloud-tab.active-aws{background:#ff9a0020;color:#ff9a00;border-color:#ff9a0040;}
+.cloud-tab.active-gcp{background:#4285f420;color:#4285f4;border-color:#4285f440;}
+.cloud-tab.active-azure{background:#0089d620;color:#0089d6;border-color:#0089d640;}
+.cloud-tab.active-databricks{background:#ff341620;color:#ff3416;border-color:#ff341640;}
+.cloud-tab:not(.active-aws):not(.active-gcp):not(.active-azure):not(.active-databricks){color:var(--text3);}
+.cmd-card{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all .15s;}
+.cmd-card:hover{border-color:var(--border2);background:var(--bg4);}
+.cmd-card-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+.cmd-card-code{font-size:10px;font-family:var(--mono);color:var(--text3);}
+/* Notifications */
+#notif{position:fixed;top:16px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
+.notif-item{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 16px;font-size:12px;display:flex;align-items:center;gap:10px;animation:slideIn .3s;max-width:320px;pointer-events:all;}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:none;opacity:1;}}
+.notif-success{border-left:3px solid var(--green);}
+.notif-error{border-left:3px solid var(--red);}
+.notif-info{border-left:3px solid var(--cyan);}
+.notif-warn{border-left:3px solid var(--yellow);}
+/* Scrollbar global */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg2);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+/* Divider */
+.divider{height:1px;background:var(--border);margin:16px 0;}
+.flex{display:flex;}.flex-col{flex-direction:column;}.gap-8{gap:8px;}.gap-12{gap:12px;}.gap-16{gap:16px;}.items-center{align-items:center;}.justify-between{justify-content:space-between;}.flex-1{flex:1;}.ml-auto{margin-left:auto;}
+/* K8s pod */
+.pod-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border-radius:6px;margin-bottom:6px;border:1px solid var(--border);font-size:12px;}
+.pod-name{flex:1;font-family:var(--mono);color:var(--text);}
+.container-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border-radius:6px;margin-bottom:8px;border:1px solid var(--border);}
+/* Chatbot layout fix */
+#s-chatbot{display:none;height:calc(100vh - 120px);flex-direction:column;}
+#s-chatbot.active{display:flex;}
+/* Access list */
+.access-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg3);border-radius:6px;margin-bottom:6px;font-size:12px;}
+.access-avatar{width:28px;height:28px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--cyan);}
+/* Corporate section */
+.wizard-step{border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden;}
+.wizard-step-header{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg3);cursor:pointer;transition:background .15s;}
+.wizard-step-header:hover{background:var(--bg4);}
+.wizard-step-num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.step-done .wizard-step-num{background:#3fb95022;color:var(--green);border:1px solid var(--green);}
+.step-active .wizard-step-num{background:#00d9ff22;color:var(--cyan);border:1px solid var(--cyan);}
+.step-pending .wizard-step-num{background:var(--bg4);color:var(--text3);border:1px solid var(--border);}
+.wizard-step-body{padding:14px;border-top:1px solid var(--border);display:none;}
+.wizard-step.open .wizard-step-body{display:block;}
+.domain-result{padding:10px 14px;border-radius:6px;margin-top:10px;font-size:12px;font-family:var(--mono);}
+.domain-available{background:#3fb95015;border:1px solid #3fb95040;color:var(--green);}
+.domain-taken{background:#f8514915;border:1px solid #f8514940;color:var(--red);}
+.domain-unknown{background:#e3b34115;border:1px solid #e3b34140;color:var(--yellow);}
+.domain-checking{background:#00d9ff10;border:1px solid #00d9ff30;color:var(--cyan);}
+.price-row{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;padding:8px 12px;border-radius:6px;margin-bottom:6px;background:var(--bg3);font-size:12px;}
+.price-row:hover{background:var(--bg4);}
+.plan-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;transition:border-color .15s;}
+.plan-card:hover{border-color:var(--border2);}
+.plan-card.recommended{border-color:#3fb95050;background:#3fb95008;}
+.plan-feature{font-size:11px;color:var(--text2);padding:3px 0;display:flex;align-items:center;gap:6px;}
+.plan-feature.yes{color:var(--text2);}
+.plan-feature.no{color:var(--text3);}
+.step-badge{font-size:9px;padding:2px 7px;border-radius:20px;font-weight:700;letter-spacing:.5px;}
+.badge-free{background:#3fb95020;color:var(--green);border:1px solid #3fb95040;}
+.badge-paid{background:#e3b34120;color:var(--yellow);border:1px solid #e3b34140;}
+.badge-self{background:#bc8cff20;color:var(--purple);border:1px solid #bc8cff40;}
+.info-box{padding:10px 14px;border-radius:6px;font-size:11px;line-height:1.7;margin:8px 0;}
+.info-box-blue{background:#00d9ff0d;border-left:3px solid var(--cyan);color:var(--text2);}
+.info-box-green{background:#3fb9500d;border-left:3px solid var(--green);color:var(--text2);}
+.info-box-yellow{background:#e3b3410d;border-left:3px solid var(--yellow);color:var(--text2);}
+.info-box-red{background:#f851490d;border-left:3px solid var(--red);color:var(--text2);}
+</style>
+</head>
+<body>
+
+<div id="notif"></div>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="logo">
+    <div class="logo-icon">🚀</div>
+    <div>
+      <div class="logo-text">DevDeploy</div>
+      <div class="logo-sub">Manager v2.0</div>
+    </div>
+  </div>
+
+  <div class="nav-section">Servidor Web</div>
+  <div class="nav-item active" onclick="showSection('server')">
+    <span>🌐</span> Web Server Manager
+    <span class="badge badge-green" id="nav-server-badge">Online</span>
+  </div>
+  <div class="nav-item" onclick="showSection('terminal')">
+    <span>💻</span> Terminal / Logs
+    <span class="badge badge-cyan" id="nav-term-badge">0</span>
+  </div>
+
+  <div class="nav-section">Control de Versiones</div>
+  <div class="nav-item" onclick="showSection('github')">
+    <span>🐙</span> GitHub Manager
+    <span class="badge badge-green" id="nav-git-badge">Sync</span>
+  </div>
+
+  <div class="nav-section">Infraestructura</div>
+  <div class="nav-item" onclick="showSection('docker')">
+    <span>🐳</span> Docker / K8s
+    <span class="badge badge-cyan" id="nav-docker-badge">3</span>
+  </div>
+  <div class="nav-item" onclick="showSection('devops')">
+    <span>⚙️</span> DevOps / MLOps
+  </div>
+  <div class="nav-item" onclick="showSection('cloud')">
+    <span>☁️</span> Cloud Platforms
+    <span class="badge badge-yellow" id="nav-cloud-badge">4</span>
+  </div>
+
+  <div class="nav-section">Asistente</div>
+  <div class="nav-item" onclick="showSection('chatbot')">
+    <span>🤖</span> ChatBot IA
+    <span class="badge badge-purple" id="nav-chat-badge">Claude</span>
+  </div>
+
+  <div class="nav-section">Web Corporativa</div>
+  <div class="nav-item" onclick="showSection('corporate')">
+    <span>🏢</span> Dominio &amp; Email
+    <span class="badge badge-cyan">Wizard</span>
+  </div>
+
+  <div class="sidebar-bottom">
+    <div class="server-status">
+      <div class="status-dot dot-online dot-pulse" id="global-dot"></div>
+      <div class="status-info">
+        <div class="status-label" id="global-label">Servidor Online</div>
+        <div class="status-url" id="global-url">http://localhost:8080</div>
+      </div>
+    </div>
+    <div style="margin-top:8px;display:flex;gap:6px;">
+      <button class="btn btn-sm btn-ghost" style="flex:1;justify-content:center;" onclick="generatePDF()">📄 PDF</button>
+      <button class="btn btn-sm btn-ghost" style="flex:1;justify-content:center;" onclick="showSection('terminal')">📋 Logs</button>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="header">
+    <div>
+      <div class="header-title" id="header-title">🌐 Web Server Manager</div>
+      <div class="header-sub" id="header-sub">Gestión y despliegue de aplicaciones web locales</div>
+    </div>
+    <div class="header-actions">
+      <div class="mode-pills">
+        <div class="mode-pill active-online" id="pill-online" onclick="setMode('online')">🟢 Online</div>
+        <div class="mode-pill" id="pill-private" onclick="setMode('private')">🔒 Privado</div>
+        <div class="mode-pill" id="pill-offline" onclick="setMode('offline')">⛔ Offline</div>
+      </div>
+      <button class="btn btn-primary" onclick="deployApp()">🚀 Deploy</button>
+      <button class="btn btn-ghost" onclick="generatePDF()">📄 Exportar PDF</button>
+    </div>
+  </div>
+
+  <div id="content">
+
+    <!-- ==================== SECTION: SERVER ==================== -->
+    <div class="section active" id="s-server">
+      <div class="grid-4" style="margin-bottom:16px;">
+        <div class="metric">
+          <div class="metric-val" id="m-status">🟢</div>
+          <div class="metric-label">Estado Servidor</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" id="m-port" style="font-size:18px;">8080</div>
+          <div class="metric-label">Puerto Activo</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" id="m-files">0</div>
+          <div class="metric-label">Archivos Desplegados</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" id="m-uptime">0h 0m</div>
+          <div class="metric-label">Uptime</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Upload -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📁 Archivos Web</span>
+            <button class="btn btn-sm btn-primary" onclick="document.getElementById('file-input').click()">+ Agregar</button>
+          </div>
+          <input type="file" id="file-input" multiple accept=".html,.htm,.css,.js,.json,.md,.xml,.svg" style="display:none" onchange="handleFiles(this.files)">
+          <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
+            <div class="upload-icon">📂</div>
+            <div class="upload-text">Arrastrá o hacé click para subir</div>
+            <div class="upload-sub">.html .css .js .json .md — sin límite de archivos</div>
+          </div>
+          <div class="file-list" id="file-list"></div>
+        </div>
+
+        <!-- Config -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">⚙️ Configuración del Servidor</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nombre del Proyecto</label>
+            <input class="form-input" id="proj-name" value="mi-webapp" placeholder="mi-webapp">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Puerto</label>
+            <input class="form-input" id="proj-port" value="8080" type="number" placeholder="8080">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Imagen Docker Base</label>
+            <select class="form-input" id="proj-image">
+              <option value="nginx:alpine">nginx:alpine (recomendado)</option>
+              <option value="nginx:latest">nginx:latest</option>
+              <option value="httpd:alpine">apache/httpd:alpine</option>
+              <option value="node:18-alpine">node:18-alpine</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">GitHub Repositorio</label>
+            <input class="form-input" id="proj-repo" value="github.com/usuario/mi-webapp" placeholder="github.com/usuario/repo">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Rama Principal</label>
+            <input class="form-input" id="proj-branch" value="main" placeholder="main">
+          </div>
+          <div style="display:flex;gap:8px;margin-top:4px;">
+            <button class="btn btn-success" style="flex:1;justify-content:center;" onclick="deployApp()">🚀 Deploy Online</button>
+            <button class="btn btn-danger btn-sm" onclick="takeOffline()">⛔ Offline</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Private Mode Panel -->
+      <div class="card" id="private-panel" style="display:none;">
+        <div class="card-header">
+          <span class="card-title">🔒 Modo Privado — Control de Acceso</span>
+          <button class="btn btn-sm btn-warn" onclick="addAccess()">+ Agregar Usuario</button>
+        </div>
+        <div style="margin-bottom:12px;padding:10px 14px;background:var(--bg3);border-radius:6px;border-left:3px solid var(--yellow);">
+          <div style="font-size:12px;color:var(--yellow);font-weight:600;">🔒 Servidor en modo privado</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">Solo los usuarios autorizados pueden acceder. Autenticación HTTP básica activa.</div>
+        </div>
+        <div id="access-list">
+          <div class="access-item"><div class="access-avatar">A</div><span style="flex:1;color:var(--text);">admin</span><span class="tag tag-green">propietario</span><button class="btn btn-sm btn-ghost" style="padding:2px 8px;" disabled>No eliminar</button></div>
+        </div>
+      </div>
+
+      <!-- URL Panel -->
+      <div class="card" id="url-panel">
+        <div class="card-header">
+          <span class="card-title">🔗 URLs de Acceso</span>
+          <span class="tag tag-green" id="url-status-tag">🟢 Online</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;">
+            <div style="font-size:10px;color:var(--text3);margin-bottom:6px;font-family:var(--mono);">LOCAL NETWORK</div>
+            <div style="font-size:13px;font-family:var(--mono);color:var(--cyan);" id="url-local">http://localhost:8080</div>
+            <button class="btn btn-sm btn-ghost" style="margin-top:8px;" onclick="copyURL('local')">📋 Copiar</button>
+          </div>
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;">
+            <div style="font-size:10px;color:var(--text3);margin-bottom:6px;font-family:var(--mono);">IP DE RED</div>
+            <div style="font-size:13px;font-family:var(--mono);color:var(--cyan);" id="url-network">http://192.168.1.100:8080</div>
+            <button class="btn btn-sm btn-ghost" style="margin-top:8px;" onclick="copyURL('network')">📋 Copiar</button>
+          </div>
+        </div>
+        <div style="margin-top:10px;padding:10px 14px;background:var(--bg3);border-radius:6px;font-size:11px;font-family:var(--mono);color:var(--text3);">
+          <span style="color:var(--green);">✓</span> GitHub actualizado · 
+          <span style="color:var(--green);">✓</span> Docker corriendo · 
+          <span style="color:var(--green);">✓</span> K8s deployment activo · 
+          <span id="last-deploy-time">último deploy: ahora</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SECTION: TERMINAL ==================== -->
+    <div class="section" id="s-terminal">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">💻 Terminal — Historial de Comandos</span>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-sm btn-ghost" onclick="clearTerminal()">🗑️ Limpiar</button>
+            <button class="btn btn-sm btn-primary" onclick="deployApp()">▶ Re-deploy</button>
+          </div>
+        </div>
+        <div class="terminal">
+          <div class="terminal-header">
+            <div class="term-dot" style="background:#ff5f56;"></div>
+            <div class="term-dot" style="background:#ffbd2e;"></div>
+            <div class="term-dot" style="background:#27c93f;"></div>
+            <div class="term-title">devdeploy — bash — 80×24</div>
+            <span style="font-size:10px;color:var(--text3);" id="cmd-count">0 comandos</span>
+          </div>
+          <div class="terminal-body" id="terminal-body">
+            <div class="cmd-line"><span class="cmd-comment"># DevDeploy Manager — Terminal Lista</span></div>
+            <div class="cmd-line"><span class="cmd-comment"># Ejecutá Deploy para comenzar la secuencia de comandos</span></div>
+            <div class="cmd-line"><span class="cmd-prompt">usuario@devdeploy:~$ </span><span class="cmd-text blink">▌</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">📋 Comandos Rápidos</span></div>
+          <div class="cmd-card" onclick="runQuickCmd('docker ps -a','Listar contenedores Docker')">
+            <div class="cmd-card-title">🐳 Ver contenedores</div>
+            <div class="cmd-card-code">docker ps -a</div>
+          </div>
+          <div class="cmd-card" onclick="runQuickCmd('kubectl get pods -A','Ver todos los pods K8s')">
+            <div class="cmd-card-title">☸️ Ver pods K8s</div>
+            <div class="cmd-card-code">kubectl get pods -A</div>
+          </div>
+          <div class="cmd-card" onclick="runQuickCmd('git status && git log --oneline -5','Estado y log Git')">
+            <div class="cmd-card-title">🐙 Estado Git</div>
+            <div class="cmd-card-code">git status && git log --oneline -5</div>
+          </div>
+          <div class="cmd-card" onclick="runQuickCmd('docker stats --no-stream','Stats de contenedores')">
+            <div class="cmd-card-title">📊 Stats Docker</div>
+            <div class="cmd-card-code">docker stats --no-stream</div>
+          </div>
+          <div class="cmd-card" onclick="runQuickCmd('kubectl get services -A','Ver servicios K8s')">
+            <div class="cmd-card-title">🔗 Servicios K8s</div>
+            <div class="cmd-card-code">kubectl get services -A</div>
+          </div>
+          <div class="cmd-card" onclick="runQuickCmd('docker images','Imágenes Docker locales')">
+            <div class="cmd-card-title">📦 Imágenes Docker</div>
+            <div class="cmd-card-code">docker images</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">⚡ Acciones del Servidor</span></div>
+          <div class="cmd-card" onclick="deployApp()">
+            <div class="cmd-card-title">🚀 Deploy completo (Docker + K8s + GitHub)</div>
+            <div class="cmd-card-code">docker build → push → kubectl apply → git push</div>
+          </div>
+          <div class="cmd-card" onclick="setMode('private')">
+            <div class="cmd-card-title">🔒 Activar modo privado</div>
+            <div class="cmd-card-code">kubectl apply -f auth-ingress.yaml</div>
+          </div>
+          <div class="cmd-card" onclick="takeOffline()">
+            <div class="cmd-card-title">⛔ Poner offline</div>
+            <div class="cmd-card-code">kubectl scale deploy/webapp --replicas=0</div>
+          </div>
+          <div class="cmd-card" onclick="githubSync()">
+            <div class="cmd-card-title">🐙 Sincronizar GitHub</div>
+            <div class="cmd-card-code">git add . && git commit && git push</div>
+          </div>
+          <div class="cmd-card" onclick="runQuickCmd('kubectl rollout restart deployment/webapp','Reiniciar deployment')">
+            <div class="cmd-card-title">♻️ Reiniciar deployment</div>
+            <div class="cmd-card-code">kubectl rollout restart deployment/webapp</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SECTION: GITHUB ==================== -->
+    <div class="section" id="s-github">
+      <div class="grid-2" style="margin-bottom:16px;">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">🐙 Repositorio</span>
+            <span class="tag tag-green">✓ Conectado</span>
+          </div>
+          <div class="form-group"><label class="form-label">URL del Repositorio</label>
+            <input class="form-input" id="gh-repo-url" value="https://github.com/usuario/mi-webapp.git" placeholder="https://github.com/...">
+          </div>
+          <div class="form-group"><label class="form-label">Token Personal (PAT)</label>
+            <input class="form-input" id="gh-token" type="password" value="ghp_xxxxxxxxxxxxxxxxxxxx" placeholder="ghp_...">
+          </div>
+          <div class="form-group"><label class="form-label">Rama</label>
+            <input class="form-input" id="gh-branch" value="main" placeholder="main">
+          </div>
+          <div class="form-group"><label class="form-label">Mensaje de Commit</label>
+            <input class="form-input" id="gh-commit-msg" value="feat: actualización de contenido web" placeholder="feat: ...">
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-success" onclick="githubSync()">⬆ Push</button>
+            <button class="btn btn-primary" onclick="runQuickCmd('git pull origin main','Pull desde GitHub')">⬇ Pull</button>
+            <button class="btn btn-ghost" onclick="githubCreateRelease()">🏷️ Release</button>
+            <button class="btn btn-ghost" onclick="runQuickCmd('git log --oneline -10','Ver historial')">📜 Log</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📁 Estructura del Repositorio</span>
+            <span class="card-subtitle">Organización best-practices</span>
+          </div>
+          <div id="repo-tree">
+            <div class="tree-item"><span class="tree-folder">📁</span> <span class="tree-folder">.github/</span></div>
+            <div class="tree-indent">
+              <div class="tree-item"><span class="tree-folder">📁</span> <span class="tree-folder">workflows/</span></div>
+              <div class="tree-indent">
+                <div class="tree-item"><span>📄</span> <span class="tree-file-yml">ci-cd.yml</span></div>
+                <div class="tree-item"><span>📄</span> <span class="tree-file-yml">deploy.yml</span></div>
+              </div>
+            </div>
+            <div class="tree-item"><span class="tree-folder">📁</span> <span class="tree-folder">k8s/</span></div>
+            <div class="tree-indent">
+              <div class="tree-item"><span>📄</span> <span class="tree-file-yml">deployment.yaml</span></div>
+              <div class="tree-item"><span>📄</span> <span class="tree-file-yml">service.yaml</span></div>
+              <div class="tree-item"><span>📄</span> <span class="tree-file-yml">ingress.yaml</span></div>
+              <div class="tree-item"><span>📄</span> <span class="tree-file-yml">configmap.yaml</span></div>
+            </div>
+            <div class="tree-item"><span class="tree-folder">📁</span> <span class="tree-folder">src/</span></div>
+            <div class="tree-indent">
+              <div class="tree-item"><span>📄</span> <span class="tree-file-html">index.html</span></div>
+              <div class="tree-item"><span>📄</span> <span class="tree-file-html">styles.css</span></div>
+              <div class="tree-item"><span>📄</span> <span class="tree-file-html">app.js</span></div>
+            </div>
+            <div class="tree-item"><span>📄</span> <span class="tree-file-yml">Dockerfile</span></div>
+            <div class="tree-item"><span>📄</span> <span class="tree-file-yml">docker-compose.yml</span></div>
+            <div class="tree-item"><span>📄</span> <span class="tree-file-md">README.md</span></div>
+            <div class="tree-item"><span>📄</span> <span class="tree-file-json">.gitignore</span></div>
+            <div class="tree-item"><span>📄</span> <span class="tree-file-json">package.json</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📜 Historial de Commits</span>
+          <button class="btn btn-sm btn-ghost" onclick="runQuickCmd('git log --oneline --graph --all','Git log gráfico')">Ver Grafo</button>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Hash</th><th>Mensaje</th><th>Autor</th><th>Rama</th><th>Fecha</th><th>Estado</th></tr></thead>
+          <tbody id="commit-table">
+            <tr><td>a1b2c3d</td><td>feat: deploy inicial de webapp</td><td>usuario</td><td><span class="tag tag-cyan">main</span></td><td>hace 2 min</td><td><span class="tag tag-green">✓ pushed</span></td></tr>
+            <tr><td>e5f6a7b</td><td>chore: agregar Dockerfile y k8s manifests</td><td>usuario</td><td><span class="tag tag-cyan">main</span></td><td>hace 5 min</td><td><span class="tag tag-green">✓ pushed</span></td></tr>
+            <tr><td>c8d9e0f</td><td>init: estructura inicial del proyecto</td><td>usuario</td><td><span class="tag tag-cyan">main</span></td><td>hace 10 min</td><td><span class="tag tag-green">✓ pushed</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">🔄 GitHub Actions — CI/CD</span><span class="tag tag-green">Workflows activos</span></div>
+        <table class="data-table">
+          <thead><tr><th>Workflow</th><th>Trigger</th><th>Último Run</th><th>Estado</th><th>Duración</th></tr></thead>
+          <tbody>
+            <tr><td>ci-cd.yml</td><td>push → main</td><td>hace 2 min</td><td><span class="tag tag-green">✓ success</span></td><td>1m 23s</td></tr>
+            <tr><td>deploy.yml</td><td>push → main</td><td>hace 2 min</td><td><span class="tag tag-green">✓ success</span></td><td>2m 45s</td></tr>
+          </tbody>
+        </table>
+        <div style="margin-top:14px;background:var(--bg3);border-radius:6px;padding:12px;">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-family:var(--mono);"># .github/workflows/ci-cd.yml</div>
+          <pre style="font-size:11px;font-family:var(--mono);color:var(--text2);line-height:1.6;overflow-x:auto;">name: CI/CD Pipeline
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t $IMAGE_NAME:$GITHUB_SHA .
+      - name: Push to registry
+        run: docker push $IMAGE_NAME:$GITHUB_SHA
+      - name: Deploy to K8s
+        run: kubectl set image deployment/webapp webapp=$IMAGE_NAME:$GITHUB_SHA</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SECTION: DOCKER/K8S ==================== -->
+    <div class="section" id="s-docker">
+      <div class="tabs" id="docker-tabs">
+        <div class="tab active" onclick="switchTab('docker-tabs','dt-docker',this)">🐳 Docker</div>
+        <div class="tab" onclick="switchTab('docker-tabs','dt-k8s',this)">☸️ Kubernetes</div>
+        <div class="tab" onclick="switchTab('docker-tabs','dt-compose',this)">📦 Compose</div>
+        <div class="tab" onclick="switchTab('docker-tabs','dt-registry',this)">🗃️ Registry</div>
+      </div>
+
+      <div class="tab-content active" id="dt-docker">
+        <div class="grid-4" style="margin-bottom:16px;">
+          <div class="metric"><div class="metric-val">3</div><div class="metric-label">Contenedores activos</div></div>
+          <div class="metric"><div class="metric-val">5</div><div class="metric-label">Imágenes locales</div></div>
+          <div class="metric"><div class="metric-val">142 MB</div><div class="metric-label">Uso de disco</div></div>
+          <div class="metric"><div class="metric-val">2</div><div class="metric-label">Volúmenes</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">📦 Contenedores</span>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-sm btn-success" onclick="runQuickCmd('docker run -d -p 8080:80 --name webapp --restart always webapp:latest','Iniciar contenedor webapp')">▶ Start</button>
+              <button class="btn btn-sm btn-danger" onclick="runQuickCmd('docker stop webapp && docker rm webapp','Detener y eliminar contenedor')">⏹ Stop</button>
+              <button class="btn btn-sm btn-ghost" onclick="runQuickCmd('docker logs webapp --tail 50 -f','Ver logs del contenedor')">📋 Logs</button>
+            </div>
+          </div>
+          <div class="container-item">
+            <div class="status-dot dot-online dot-pulse"></div>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-family:var(--mono);color:var(--text);">webapp</div>
+              <div style="font-size:10px;color:var(--text3);">nginx:alpine · Puerto 8080:80 · Uptime: 2h 15m</div>
+            </div>
+            <span class="tag tag-green">running</span>
+            <div style="font-size:11px;color:var(--text2);font-family:var(--mono);">CPU: 0.1% · MEM: 4.2MB</div>
+          </div>
+          <div class="container-item">
+            <div class="status-dot dot-online dot-pulse"></div>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-family:var(--mono);color:var(--text);">webapp-registry</div>
+              <div style="font-size:10px;color:var(--text3);">registry:2 · Puerto 5000:5000 · Uptime: 5h 30m</div>
+            </div>
+            <span class="tag tag-green">running</span>
+            <div style="font-size:11px;color:var(--text2);font-family:var(--mono);">CPU: 0.0% · MEM: 9.1MB</div>
+          </div>
+          <div class="container-item">
+            <div class="status-dot dot-offline"></div>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-family:var(--mono);color:var(--text);">webapp-dev</div>
+              <div style="font-size:10px;color:var(--text3);">nginx:alpine · Puerto 8081:80 · Detenido</div>
+            </div>
+            <span class="tag tag-red">exited</span>
+            <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">CPU: 0% · MEM: 0MB</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">🏗️ Dockerfile Generado</span>
+            <button class="btn btn-sm btn-ghost" onclick="copyDockerfile()">📋 Copiar</button>
+          </div>
+          <pre id="dockerfile-preview" style="font-size:11px;font-family:var(--mono);color:var(--text2);background:var(--bg3);padding:14px;border-radius:6px;line-height:1.7;overflow-x:auto;"># DevDeploy Manager — Dockerfile auto-generado
+FROM nginx:alpine
+
+LABEL maintainer="DevDeploy Manager"
+LABEL version="1.0"
+
+# Copiar archivos web
+COPY src/ /usr/share/nginx/html/
+
+# Configuración nginx personalizada
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost/ || exit 1
+
+# Puerto expuesto
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]</pre>
+        </div>
+      </div>
+
+      <div class="tab-content" id="dt-k8s">
+        <div class="grid-4" style="margin-bottom:16px;">
+          <div class="metric"><div class="metric-val">3</div><div class="metric-label">Pods Running</div></div>
+          <div class="metric"><div class="metric-val">1</div><div class="metric-label">Deployments</div></div>
+          <div class="metric"><div class="metric-val">2</div><div class="metric-label">Services</div></div>
+          <div class="metric"><div class="metric-val">1</div><div class="metric-label">Ingress</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">☸️ Pods</span>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-sm btn-success" onclick="scaleUp()">↑ Scale Up</button>
+              <button class="btn btn-sm btn-warn" onclick="scaleDown()">↓ Scale Down</button>
+              <button class="btn btn-sm btn-ghost" onclick="runQuickCmd('kubectl rollout restart deployment/webapp','Reiniciar pods')">♻️ Restart</button>
+            </div>
+          </div>
+          <div class="pod-item"><div class="status-dot dot-online dot-pulse"></div><div class="pod-name">webapp-7d4f8b9c6-xk2ld</div><span class="tag tag-green">Running</span><span style="font-size:10px;color:var(--text3);font-family:var(--mono);">2/2 Ready · node-01 · 15m</span></div>
+          <div class="pod-item"><div class="status-dot dot-online dot-pulse"></div><div class="pod-name">webapp-7d4f8b9c6-mn3pq</div><span class="tag tag-green">Running</span><span style="font-size:10px;color:var(--text3);font-family:var(--mono);">2/2 Ready · node-02 · 15m</span></div>
+          <div class="pod-item"><div class="status-dot dot-online dot-pulse"></div><div class="pod-name">webapp-7d4f8b9c6-rs7tu</div><span class="tag tag-green">Running</span><span style="font-size:10px;color:var(--text3);font-family:var(--mono);">2/2 Ready · node-01 · 15m</span></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">📄 Manifiestos K8s Generados</span></div>
+          <pre style="font-size:11px;font-family:var(--mono);color:var(--text2);background:var(--bg3);padding:14px;border-radius:6px;line-height:1.7;overflow-x:auto;" id="k8s-manifest">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp
+  namespace: production
+  labels:
+    app: webapp
+    version: "1.0"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+      - name: webapp
+        image: localhost:5000/webapp:latest
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-service
+  namespace: production
+spec:
+  selector:
+    app: webapp
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30080
+  type: NodePort</pre>
+        </div>
+      </div>
+
+      <div class="tab-content" id="dt-compose">
+        <div class="card">
+          <div class="card-header"><span class="card-title">📦 Docker Compose</span>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-sm btn-success" onclick="runQuickCmd('docker-compose up -d','Iniciar con Docker Compose')">▶ Up</button>
+              <button class="btn btn-sm btn-danger" onclick="runQuickCmd('docker-compose down','Detener Docker Compose')">⏹ Down</button>
+              <button class="btn btn-sm btn-ghost" onclick="runQuickCmd('docker-compose logs -f','Ver logs de Compose')">📋 Logs</button>
+            </div>
+          </div>
+          <pre style="font-size:11px;font-family:var(--mono);color:var(--text2);background:var(--bg3);padding:14px;border-radius:6px;line-height:1.7;overflow-x:auto;">version: '3.9'
+services:
+  webapp:
+    build: .
+    image: webapp:latest
+    container_name: webapp
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ./src:/usr/share/nginx/html:ro
+    environment:
+      - NGINX_HOST=localhost
+      - NGINX_PORT=80
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  registry:
+    image: registry:2
+    container_name: local-registry
+    restart: always
+    ports:
+      - "5000:5000"
+    volumes:
+      - registry-data:/var/lib/registry
+
+volumes:
+  registry-data:</pre>
+        </div>
+      </div>
+
+      <div class="tab-content" id="dt-registry">
+        <div class="card">
+          <div class="card-header"><span class="card-title">🗃️ Registry Local</span><span class="tag tag-green">localhost:5000</span></div>
+          <table class="data-table">
+            <thead><tr><th>Imagen</th><th>Tag</th><th>Tamaño</th><th>Creada</th><th>Acciones</th></tr></thead>
+            <tbody>
+              <tr><td>webapp</td><td><span class="tag tag-cyan">latest</span></td><td>23.4 MB</td><td>hace 2 min</td><td><button class="btn btn-sm btn-ghost" onclick="runQuickCmd('docker pull localhost:5000/webapp:latest','Pull imagen webapp')">Pull</button></td></tr>
+              <tr><td>webapp</td><td><span class="tag tag-purple">sha-a1b2c3d</span></td><td>23.4 MB</td><td>hace 5 min</td><td><button class="btn btn-sm btn-ghost" onclick="runQuickCmd('docker pull localhost:5000/webapp:sha-a1b2c3d','Pull imagen por SHA')">Pull</button></td></tr>
+              <tr><td>webapp</td><td><span class="tag tag-orange">v0.9.0</span></td><td>21.1 MB</td><td>hace 1h</td><td><button class="btn btn-sm btn-ghost" onclick="runQuickCmd('docker pull localhost:5000/webapp:v0.9.0','Pull imagen v0.9.0')">Pull</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SECTION: DEVOPS/MLOPS ==================== -->
+    <div class="section" id="s-devops">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">⚙️ Pipeline CI/CD</span><span class="tag tag-green">Activo</span></div>
+          <div style="padding:8px 0;">
+            <div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+              <span style="font-size:16px;">1</span>
+              <div style="flex:1;"><div style="font-size:12px;color:var(--text);">Code Checkout</div><div style="font-size:10px;color:var(--text3);">git clone / pull</div></div>
+              <span class="tag tag-green">✓ OK</span>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+              <span style="font-size:16px;">2</span>
+              <div style="flex:1;"><div style="font-size:12px;color:var(--text);">Docker Build</div><div style="font-size:10px;color:var(--text3);">docker build -t webapp:latest .</div></div>
+              <span class="tag tag-green">✓ OK</span>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+              <span style="font-size:16px;">3</span>
+              <div style="flex:1;"><div style="font-size:12px;color:var(--text);">Push Registry</div><div style="font-size:10px;color:var(--text3);">docker push localhost:5000/webapp:latest</div></div>
+              <span class="tag tag-green">✓ OK</span>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+              <span style="font-size:16px;">4</span>
+              <div style="flex:1;"><div style="font-size:12px;color:var(--text);">K8s Deploy</div><div style="font-size:10px;color:var(--text3);">kubectl apply -f k8s/</div></div>
+              <span class="tag tag-green">✓ OK</span>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;padding:8px 0;">
+              <span style="font-size:16px;">5</span>
+              <div style="flex:1;"><div style="font-size:12px;color:var(--text);">GitHub Push</div><div style="font-size:10px;color:var(--text3);">git add . && git commit && git push</div></div>
+              <span class="tag tag-green">✓ OK</span>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:10px;" onclick="deployApp()">▶ Ejecutar Pipeline</button>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">🧠 MLOps — Gestión de Modelos</span></div>
+          <div class="cmd-card" onclick="runQuickCmd('mlflow models serve -m models:/my-model/Production -p 5001','Servir modelo MLflow')">
+            <div class="cmd-card-title">🔬 Servir modelo MLflow</div>
+            <div class="cmd-card-code">mlflow models serve -m models:/my-model/Production -p 5001</div>
+          </div>
+          <div class="cmd-card" onclick="runQuickCmd('docker build -t ml-model:latest -f Dockerfile.mlflow . && kubectl apply -f k8s/mlflow-deploy.yaml','Deploy modelo a K8s')">
+            <div class="cmd-card-title">🚀 Deploy modelo a K8s</div>
+            <div class="cmd-card-code">docker build + kubectl apply mlflow-deploy.yaml</div>
+          </div>
+          <div class="cmd-card" onclick="runQuickCmd('kubectl get pods -n mlops -l app=model-server','Ver pods del modelo')">
+            <div class="cmd-card-title">📊 Ver estado del modelo</div>
+            <div class="cmd-card-code">kubectl get pods -n mlops -l app=model-server</div>
+          </div>
+          <div class="cmd-card" onclick="runQuickCmd('curl -X POST http://localhost:5001/invocations -H \"Content-Type: application/json\" -d \"{\\\"instances\\\": [1,2,3]}\"','Test del endpoint del modelo')">
+            <div class="cmd-card-title">🧪 Test endpoint del modelo</div>
+            <div class="cmd-card-code">curl -X POST http://localhost:5001/invocations</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">📊 Monitoring — Métricas del Sistema</span></div>
+        <div class="grid-4">
+          <div><div style="font-size:11px;color:var(--text3);margin-bottom:6px;">CPU</div><div class="progress"><div class="progress-fill fill-cyan" style="width:23%;"></div></div><div style="font-size:11px;color:var(--cyan);margin-top:4px;font-family:var(--mono);">23%</div></div>
+          <div><div style="font-size:11px;color:var(--text3);margin-bottom:6px;">RAM</div><div class="progress"><div class="progress-fill fill-green" style="width:41%;"></div></div><div style="font-size:11px;color:var(--green);margin-top:4px;font-family:var(--mono);">41%</div></div>
+          <div><div style="font-size:11px;color:var(--text3);margin-bottom:6px;">Disco</div><div class="progress"><div class="progress-fill fill-yellow" style="width:67%;"></div></div><div style="font-size:11px;color:var(--yellow);margin-top:4px;font-family:var(--mono);">67%</div></div>
+          <div><div style="font-size:11px;color:var(--text3);margin-bottom:6px;">Network I/O</div><div class="progress"><div class="progress-fill fill-cyan" style="width:12%;"></div></div><div style="font-size:11px;color:var(--cyan);margin-top:4px;font-family:var(--mono);">12%</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SECTION: CLOUD ==================== -->
+    <div class="section" id="s-cloud">
+      <div style="margin-bottom:16px;display:flex;gap:4px;border-bottom:1px solid var(--border);padding-bottom:0;">
+        <div class="cloud-tab active-aws" id="ctab-aws" onclick="switchCloud('aws')">🟠 AWS</div>
+        <div class="cloud-tab" id="ctab-gcp" onclick="switchCloud('gcp')">🔵 GCP</div>
+        <div class="cloud-tab" id="ctab-azure" onclick="switchCloud('azure')">🔷 Azure</div>
+        <div class="cloud-tab" id="ctab-databricks" onclick="switchCloud('databricks')">🔴 Databricks</div>
+      </div>
+
+      <div id="cloud-aws">
+        <div class="card"><div class="card-header"><span class="card-title">🟠 Amazon Web Services</span><span class="tag tag-orange">Credenciales configuradas</span></div>
+          <div class="form-group"><label class="form-label">AWS Region</label><select class="form-input"><option>us-east-1 (N. Virginia)</option><option>us-west-2 (Oregon)</option><option>sa-east-1 (São Paulo)</option></select></div>
+          <div class="grid-2">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">☁️ Servicios Core</div>
+              <div class="cmd-card" onclick="runCloudCmd('aws','aws s3 sync ./src s3://mi-webapp-bucket --delete','Sync archivos a S3')"><div class="cmd-card-title">📦 Sync a S3</div><div class="cmd-card-code">aws s3 sync ./src s3://mi-webapp-bucket</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('aws','aws cloudfront create-invalidation --distribution-id E123456 --paths \"/*\"','Invalidar caché CloudFront')"><div class="cmd-card-title">⚡ CloudFront Invalidation</div><div class="cmd-card-code">aws cloudfront create-invalidation</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('aws','aws ecr get-login-password | docker login --username AWS --password-stdin 123456789.dkr.ecr.us-east-1.amazonaws.com','Login a ECR')"><div class="cmd-card-title">🐳 Login ECR</div><div class="cmd-card-code">aws ecr get-login-password | docker login</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('aws','aws eks update-kubeconfig --name mi-cluster --region us-east-1','Configurar EKS kubeconfig')"><div class="cmd-card-title">☸️ Configurar EKS</div><div class="cmd-card-code">aws eks update-kubeconfig --name mi-cluster</div></div>
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">🔧 Gestión & Deploy</div>
+              <div class="cmd-card" onclick="runCloudCmd('aws','aws ec2 describe-instances --query \"Reservations[*].Instances[*].[InstanceId,State.Name,PublicIpAddress]\" --output table','Ver instancias EC2')"><div class="cmd-card-title">🖥️ Listar EC2</div><div class="cmd-card-code">aws ec2 describe-instances --output table</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('aws','aws lambda update-function-code --function-name mi-funcion --zip-file fileb://app.zip','Deploy Lambda')"><div class="cmd-card-title">⚡ Deploy Lambda</div><div class="cmd-card-code">aws lambda update-function-code</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('aws','aws ecs update-service --cluster mi-cluster --service mi-servicio --force-new-deployment','Redeploy ECS Service')"><div class="cmd-card-title">🔄 Redeploy ECS</div><div class="cmd-card-code">aws ecs update-service --force-new-deployment</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('aws','aws sts get-caller-identity','Verificar identidad AWS')"><div class="cmd-card-title">👤 Verificar identidad</div><div class="cmd-card-code">aws sts get-caller-identity</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="cloud-gcp" style="display:none;">
+        <div class="card"><div class="card-header"><span class="card-title">🔵 Google Cloud Platform</span><span class="tag tag-cyan">Proyecto activo</span></div>
+          <div class="form-group"><label class="form-label">Proyecto GCP</label><input class="form-input" value="mi-proyecto-gcp-123456" placeholder="project-id"></div>
+          <div class="grid-2">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">☁️ GCS & Cloud Run</div>
+              <div class="cmd-card" onclick="runCloudCmd('gcp','gsutil rsync -r ./src gs://mi-webapp-bucket','Sync a Google Cloud Storage')"><div class="cmd-card-title">📦 Sync a GCS</div><div class="cmd-card-code">gsutil rsync -r ./src gs://mi-bucket</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('gcp','gcloud run deploy webapp --image gcr.io/PROJECT/webapp --platform managed --region us-central1 --allow-unauthenticated','Deploy a Cloud Run')"><div class="cmd-card-title">🚀 Deploy Cloud Run</div><div class="cmd-card-code">gcloud run deploy webapp --allow-unauthenticated</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('gcp','gcloud container clusters get-credentials mi-cluster --region us-central1','Configurar GKE')"><div class="cmd-card-title">☸️ Configurar GKE</div><div class="cmd-card-code">gcloud container clusters get-credentials</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('gcp','gcloud builds submit --tag gcr.io/PROJECT/webapp .','Build en Cloud Build')"><div class="cmd-card-title">🏗️ Cloud Build</div><div class="cmd-card-code">gcloud builds submit --tag gcr.io/...</div></div>
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">🔧 Firebase & Functions</div>
+              <div class="cmd-card" onclick="runCloudCmd('gcp','firebase deploy --only hosting','Deploy Firebase Hosting')"><div class="cmd-card-title">🔥 Firebase Deploy</div><div class="cmd-card-code">firebase deploy --only hosting</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('gcp','gcloud functions deploy miFunction --runtime python311 --trigger-http --allow-unauthenticated','Deploy Cloud Function')"><div class="cmd-card-title">⚡ Cloud Function</div><div class="cmd-card-code">gcloud functions deploy --trigger-http</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('gcp','gcloud compute instances list --format=\"table(name,zone,machineType,status)\"','Ver instancias Compute')"><div class="cmd-card-title">🖥️ Compute Engine</div><div class="cmd-card-code">gcloud compute instances list</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('gcp','gcloud auth application-default login','Autenticación GCP')"><div class="cmd-card-title">👤 Auth Login</div><div class="cmd-card-code">gcloud auth application-default login</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="cloud-azure" style="display:none;">
+        <div class="card"><div class="card-header"><span class="card-title">🔷 Microsoft Azure</span><span class="tag tag-cyan">Suscripción activa</span></div>
+          <div class="form-group"><label class="form-label">Resource Group</label><input class="form-input" value="mi-resource-group" placeholder="resource-group"></div>
+          <div class="grid-2">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">☁️ App Service & Container</div>
+              <div class="cmd-card" onclick="runCloudCmd('azure','az acr build --registry miRegistry --image webapp:latest .','Build en Azure Container Registry')"><div class="cmd-card-title">🏗️ Build en ACR</div><div class="cmd-card-code">az acr build --registry miRegistry</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('azure','az webapp create --resource-group mi-rg --plan mi-plan --name mi-webapp --deployment-container-image-name webapp:latest','Crear Web App')"><div class="cmd-card-title">🌐 Crear Web App</div><div class="cmd-card-code">az webapp create --deployment-container...</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('azure','az aks get-credentials --resource-group mi-rg --name mi-aks','Configurar AKS')"><div class="cmd-card-title">☸️ Configurar AKS</div><div class="cmd-card-code">az aks get-credentials --name mi-aks</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('azure','az staticwebapp deploy --name mi-staticweb --source ./src','Deploy Static Web App')"><div class="cmd-card-title">📄 Static Web App</div><div class="cmd-card-code">az staticwebapp deploy</div></div>
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">🔧 Functions & Blob</div>
+              <div class="cmd-card" onclick="runCloudCmd('azure','az storage blob upload-batch -s ./src -d \"\\$web\" --account-name miStorage','Subir a Blob Storage')"><div class="cmd-card-title">📦 Blob Storage</div><div class="cmd-card-code">az storage blob upload-batch -s ./src</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('azure','func azure functionapp publish mi-functionapp','Deploy Azure Function')"><div class="cmd-card-title">⚡ Azure Function</div><div class="cmd-card-code">func azure functionapp publish</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('azure','az vm list --resource-group mi-rg --output table','Listar VMs')"><div class="cmd-card-title">🖥️ Listar VMs</div><div class="cmd-card-code">az vm list --output table</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('azure','az login','Login Azure CLI')"><div class="cmd-card-title">👤 Azure Login</div><div class="cmd-card-code">az login</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="cloud-databricks" style="display:none;">
+        <div class="card"><div class="card-header"><span class="card-title">🔴 Databricks</span><span class="tag tag-orange">Workspace conectado</span></div>
+          <div class="form-group"><label class="form-label">Databricks Host</label><input class="form-input" value="https://mi-workspace.azuredatabricks.net" placeholder="https://...azuredatabricks.net"></div>
+          <div class="grid-2">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">📊 Jobs & Clusters</div>
+              <div class="cmd-card" onclick="runCloudCmd('databricks','databricks clusters list --output JSON | jq \".clusters[] | {id:.cluster_id, name:.cluster_name, state:.state}\"','Listar clusters')"><div class="cmd-card-title">☁️ Listar Clusters</div><div class="cmd-card-code">databricks clusters list --output JSON</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('databricks','databricks jobs run-now --job-id 12345','Ejecutar Job')"><div class="cmd-card-title">▶ Ejecutar Job</div><div class="cmd-card-code">databricks jobs run-now --job-id 12345</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('databricks','databricks runs list --job-id 12345 --output TABLE','Ver runs del Job')"><div class="cmd-card-title">📋 Ver Runs</div><div class="cmd-card-code">databricks runs list --job-id 12345</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('databricks','databricks clusters create --json \"{\\\"cluster_name\\\": \\\"mi-cluster\\\", \\\"spark_version\\\": \\\"13.3.x-scala2.12\\\", \\\"num_workers\\\": 2}\"','Crear cluster')"><div class="cmd-card-title">🆕 Crear Cluster</div><div class="cmd-card-code">databricks clusters create --json {...}</div></div>
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">🔬 MLflow & Models</div>
+              <div class="cmd-card" onclick="runCloudCmd('databricks','databricks fs cp ./modelo.pkl dbfs:/FileStore/modelos/modelo.pkl','Upload modelo a DBFS')"><div class="cmd-card-title">📤 Upload a DBFS</div><div class="cmd-card-code">databricks fs cp ./modelo.pkl dbfs:/...</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('databricks','mlflow models serve -m \"models:/mi-modelo/Production\" -p 5001 --no-conda','Servir modelo MLflow')"><div class="cmd-card-title">🚀 Servir Modelo</div><div class="cmd-card-code">mlflow models serve -m models:/...</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('databricks','databricks workspace import ./notebooks/analisis.ipynb /Shared/analisis --language PYTHON','Importar notebook')"><div class="cmd-card-title">📓 Importar Notebook</div><div class="cmd-card-code">databricks workspace import ./notebook</div></div>
+              <div class="cmd-card" onclick="runCloudCmd('databricks','databricks configure --token','Configurar CLI Databricks')"><div class="cmd-card-title">⚙️ Configurar CLI</div><div class="cmd-card-code">databricks configure --token</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SECTION: CORPORATE ==================== -->
+    <div class="section" id="s-corporate">
+
+      <!-- WIZARD HEADER -->
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-header">
+          <span class="card-title">🏢 Wizard — Web Corporativa Completa</span>
+          <div style="display:flex;gap:6px;">
+            <span class="tag tag-green" id="corp-progress-tag">Paso 0/5</span>
+            <button class="btn btn-sm btn-primary" onclick="startCorporateWizard()">▶ Iniciar Wizard</button>
+          </div>
+        </div>
+        <div class="info-box info-box-blue">
+          Seguí los pasos en orden para tener tu web corporativa con dominio propio y mail profesional — desde cero, sin experiencia previa. Cada paso muestra opciones gratuitas y pagas con sus ventajas y desventajas.
+        </div>
+        <!-- Progress bar -->
+        <div style="margin-top:12px;">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-bottom:6px;font-family:var(--mono);">
+            <span>Dominio</span><span>DNS</span><span>Hosting</span><span>Email</span><span>SSL/Deploy</span>
+          </div>
+          <div style="display:flex;gap:3px;">
+            <div class="progress" style="flex:1;height:6px;"><div class="progress-fill fill-cyan" id="wp1" style="width:0%"></div></div>
+            <div class="progress" style="flex:1;height:6px;"><div class="progress-fill fill-cyan" id="wp2" style="width:0%"></div></div>
+            <div class="progress" style="flex:1;height:6px;"><div class="progress-fill fill-cyan" id="wp3" style="width:0%"></div></div>
+            <div class="progress" style="flex:1;height:6px;"><div class="progress-fill fill-cyan" id="wp4" style="width:0%"></div></div>
+            <div class="progress" style="flex:1;height:6px;"><div class="progress-fill fill-cyan" id="wp5" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs" id="corp-tabs">
+        <div class="tab active" onclick="switchCorpTab('ct-domain',this)">🌐 Dominio</div>
+        <div class="tab" onclick="switchCorpTab('ct-dns',this)">🔀 DNS</div>
+        <div class="tab" onclick="switchCorpTab('ct-hosting',this)">🖥️ Hosting</div>
+        <div class="tab" onclick="switchCorpTab('ct-email',this)">📧 Email Corp.</div>
+        <div class="tab" onclick="switchCorpTab('ct-ssl',this)">🔒 SSL &amp; Deploy</div>
+        <div class="tab" onclick="switchCorpTab('ct-checklist',this)">✅ Checklist</div>
+      </div>
+
+      <!-- TAB: DOMINIO -->
+      <div class="tab-content active" id="ct-domain">
+        <div class="grid-2">
+          <!-- Checker -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">🔍 Verificador de Dominio</span></div>
+            <div class="info-box info-box-yellow" style="margin-bottom:12px;">
+              Verificación real usando DNS-over-HTTPS de Google (sin backend requerido).
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:10px;">
+              <input id="domain-input" class="form-input" placeholder="miempresa (sin .com)" style="flex:1;"
+                onkeydown="if(event.key==='Enter')checkAllTLDs()">
+              <button class="btn btn-primary" onclick="checkAllTLDs()">🔍 Verificar</button>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;" id="tld-selector">
+              <label style="font-size:11px;color:var(--text3);width:100%;font-family:var(--mono);">TLDs a verificar:</label>
+              <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--text2);"><input type="checkbox" value=".com" checked> .com</label>
+              <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--text2);"><input type="checkbox" value=".net" checked> .net</label>
+              <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--text2);"><input type="checkbox" value=".org" checked> .org</label>
+              <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--text2);"><input type="checkbox" value=".io" checked> .io</label>
+              <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--text2);"><input type="checkbox" value=".dev"> .dev</label>
+              <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--text2);"><input type="checkbox" value=".app"> .app</label>
+              <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--text2);"><input type="checkbox" value=".ar"> .ar</label>
+              <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--text2);"><input type="checkbox" value=".com.ar"> .com.ar</label>
+              <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--text2);"><input type="checkbox" value=".co"> .co</label>
+              <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--text2);"><input type="checkbox" value=".tech"> .tech</label>
+            </div>
+            <div id="domain-results"></div>
+          </div>
+
+          <!-- Opciones de dominio -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">💰 Opciones para Obtener un Dominio</span></div>
+
+            <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Opción 1 — Pago (recomendado para corporativo)</div>
+            <div class="price-row">
+              <div><div style="font-size:12px;color:var(--text);font-weight:600;">Namecheap</div><div style="font-size:10px;color:var(--text3);">registrar popular, interface clara</div></div>
+              <span class="tag tag-green">~$9/año</span>
+              <span class="tag tag-cyan">.com</span>
+              <a href="https://namecheap.com" target="_blank" class="btn btn-sm btn-ghost">Ir →</a>
+            </div>
+            <div class="price-row">
+              <div><div style="font-size:12px;color:var(--text);font-weight:600;">Cloudflare Registrar</div><div style="font-size:10px;color:var(--text3);">precio al costo, DNS gratis incluido</div></div>
+              <span class="tag tag-green">~$9/año</span>
+              <span class="tag tag-cyan">.com</span>
+              <a href="https://cloudflare.com/registrar" target="_blank" class="btn btn-sm btn-ghost">Ir →</a>
+            </div>
+            <div class="price-row">
+              <div><div style="font-size:12px;color:var(--text);font-weight:600;">Google Domains / Squarespace</div><div style="font-size:10px;color:var(--text3);">integración Google Workspace</div></div>
+              <span class="tag tag-yellow">~$12/año</span>
+              <span class="tag tag-cyan">.com</span>
+              <a href="https://domains.google" target="_blank" class="btn btn-sm btn-ghost">Ir →</a>
+            </div>
+            <div class="price-row">
+              <div><div style="font-size:12px;color:var(--text);font-weight:600;">NIC.ar (Argentina)</div><div style="font-size:10px;color:var(--text3);">dominios .ar y .com.ar oficiales</div></div>
+              <span class="tag tag-green">Gratis</span>
+              <span class="tag tag-cyan">.ar</span>
+              <a href="https://nic.ar" target="_blank" class="btn btn-sm btn-ghost">Ir →</a>
+            </div>
+
+            <div class="divider"></div>
+            <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Opción 2 — Gratuito (con limitaciones)</div>
+            <div class="price-row">
+              <div><div style="font-size:12px;color:var(--text);font-weight:600;">GitHub Pages</div><div style="font-size:10px;color:var(--text3);">usuario.github.io — custom domain gratis</div></div>
+              <span class="tag tag-green">Gratis</span>
+              <span class="tag tag-purple">subdomain</span>
+              <a href="https://pages.github.com" target="_blank" class="btn btn-sm btn-ghost">Ir →</a>
+            </div>
+            <div class="price-row">
+              <div><div style="font-size:12px;color:var(--text);font-weight:600;">Cloudflare Pages</div><div style="font-size:10px;color:var(--text3);">proyecto.pages.dev — SSL incluido</div></div>
+              <span class="tag tag-green">Gratis</span>
+              <span class="tag tag-purple">subdomain</span>
+              <a href="https://pages.cloudflare.com" target="_blank" class="btn btn-sm btn-ghost">Ir →</a>
+            </div>
+            <div class="price-row">
+              <div><div style="font-size:12px;color:var(--text);font-weight:600;">Netlify / Vercel</div><div style="font-size:10px;color:var(--text3);">proyecto.netlify.app / vercel.app</div></div>
+              <span class="tag tag-green">Gratis</span>
+              <span class="tag tag-purple">subdomain</span>
+              <a href="https://netlify.com" target="_blank" class="btn btn-sm btn-ghost">Ir →</a>
+            </div>
+
+            <div class="info-box info-box-green" style="margin-top:10px;">
+              <b>¿Necesitás pagar?</b> Para una web corporativa profesional, sí — un dominio .com cuesta ~$9/año y da credibilidad. Los subdominios gratuitos son ideales para proyectos personales o pruebas.
+            </div>
+          </div>
+        </div>
+
+        <!-- Pasos para registrar -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">📋 Pasos para Registrar un Dominio Propio</span></div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">
+            <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
+              <div style="font-size:20px;margin-bottom:6px;">1️⃣</div>
+              <div style="font-size:11px;font-weight:600;color:var(--cyan);margin-bottom:4px;">Elegí el nombre</div>
+              <div style="font-size:10px;color:var(--text3);">Corto, memorable, sin guiones, que refleje tu marca</div>
+            </div>
+            <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
+              <div style="font-size:20px;margin-bottom:6px;">2️⃣</div>
+              <div style="font-size:11px;font-weight:600;color:var(--cyan);margin-bottom:4px;">Verificá disponibilidad</div>
+              <div style="font-size:10px;color:var(--text3);">Usá el verificador de arriba — probá varios TLDs</div>
+            </div>
+            <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
+              <div style="font-size:20px;margin-bottom:6px;">3️⃣</div>
+              <div style="font-size:11px;font-weight:600;color:var(--cyan);margin-bottom:4px;">Registralo</div>
+              <div style="font-size:10px;color:var(--text3);">Namecheap o Cloudflare Registrar — tarjeta/PayPal</div>
+            </div>
+            <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
+              <div style="font-size:20px;margin-bottom:6px;">4️⃣</div>
+              <div style="font-size:11px;font-weight:600;color:var(--cyan);margin-bottom:4px;">Configurá DNS</div>
+              <div style="font-size:10px;color:var(--text3);">Apuntá al servidor. Ver pestaña DNS →</div>
+            </div>
+            <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
+              <div style="font-size:20px;margin-bottom:6px;">5️⃣</div>
+              <div style="font-size:11px;font-weight:600;color:var(--cyan);margin-bottom:4px;">Activá SSL</div>
+              <div style="font-size:10px;color:var(--text3);">Let's Encrypt gratis o Cloudflare proxy</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: DNS -->
+      <div class="tab-content" id="ct-dns">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><span class="card-title">🔀 Configuración DNS Esencial</span></div>
+            <div class="info-box info-box-blue" style="margin-bottom:12px;">
+              DNS conecta tu dominio con tu servidor. Propagación: 5 min (Cloudflare) hasta 48h (otros registrars).
+            </div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-family:var(--mono);">REGISTROS DNS MÍNIMOS NECESARIOS</div>
+            <table class="data-table">
+              <thead><tr><th>Tipo</th><th>Nombre</th><th>Valor</th><th>TTL</th><th>Para qué</th></tr></thead>
+              <tbody>
+                <tr><td>A</td><td>@</td><td>IP_DE_TU_SERVIDOR</td><td>300</td><td>Dominio raíz → tu IP</td></tr>
+                <tr><td>A</td><td>www</td><td>IP_DE_TU_SERVIDOR</td><td>300</td><td>www.tudominio.com</td></tr>
+                <tr><td>CNAME</td><td>www</td><td>tudominio.com</td><td>300</td><td>Alias (alternativa al A)</td></tr>
+                <tr><td>MX</td><td>@</td><td>mail.tudominio.com</td><td>300</td><td>Recibir emails</td></tr>
+                <tr><td>TXT</td><td>@</td><td>v=spf1 include:... ~all</td><td>300</td><td>Validar emails (anti-spam)</td></tr>
+                <tr><td>TXT</td><td>_dmarc</td><td>v=DMARC1; p=none;</td><td>300</td><td>DMARC anti-phishing</td></tr>
+              </tbody>
+            </table>
+            <div style="margin-top:12px;">
+              <div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-family:var(--mono);">PROVEEDORES DNS RECOMENDADOS</div>
+              <div class="price-row">
+                <div><div style="font-size:12px;font-weight:600;color:var(--text);">Cloudflare DNS</div><div style="font-size:10px;color:var(--text3);">más rápido del mundo, CDN incluido, proxy anti-DDoS</div></div>
+                <span class="tag tag-green">Gratis</span>
+                <span class="step-badge badge-free">TOP</span>
+                <a href="https://cloudflare.com" target="_blank" class="btn btn-sm btn-ghost">Ir →</a>
+              </div>
+              <div class="price-row">
+                <div><div style="font-size:12px;font-weight:600;color:var(--text);">Google Cloud DNS</div><div style="font-size:10px;color:var(--text3);">alta disponibilidad, integra con GCP</div></div>
+                <span class="tag tag-yellow">~$0.2/mes</span>
+                <span class="step-badge badge-paid">GCP</span>
+                <a href="https://cloud.google.com/dns" target="_blank" class="btn btn-sm btn-ghost">Ir →</a>
+              </div>
+              <div class="price-row">
+                <div><div style="font-size:12px;font-weight:600;color:var(--text);">Route 53 (AWS)</div><div style="font-size:10px;color:var(--text3);">integra nativamente con EC2/ELB/CF</div></div>
+                <span class="tag tag-yellow">~$0.5/mes</span>
+                <span class="step-badge badge-paid">AWS</span>
+                <a href="https://aws.amazon.com/route53" target="_blank" class="btn btn-sm btn-ghost">Ir →</a>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">🛠️ Comandos DNS Útiles</span></div>
+            <div class="cmd-card" onclick="runQuickCmd('nslookup tudominio.com 8.8.8.8','Resolver DNS con Google')">
+              <div class="cmd-card-title">🔍 Verificar resolución DNS</div>
+              <div class="cmd-card-code">nslookup tudominio.com 8.8.8.8</div>
+            </div>
+            <div class="cmd-card" onclick="runQuickCmd('dig tudominio.com +short','Ver registro A del dominio')">
+              <div class="cmd-card-title">📍 Ver IP del dominio (dig)</div>
+              <div class="cmd-card-code">dig tudominio.com +short</div>
+            </div>
+            <div class="cmd-card" onclick="runQuickCmd('dig MX tudominio.com +short','Ver registros MX de correo')">
+              <div class="cmd-card-title">📧 Ver registros MX (email)</div>
+              <div class="cmd-card-code">dig MX tudominio.com +short</div>
+            </div>
+            <div class="cmd-card" onclick="runQuickCmd('dig TXT tudominio.com +short','Ver registros TXT SPF/DMARC')">
+              <div class="cmd-card-title">🔐 Ver TXT (SPF/DMARC/DKIM)</div>
+              <div class="cmd-card-code">dig TXT tudominio.com +short</div>
+            </div>
+            <div class="cmd-card" onclick="runQuickCmd('curl -s https://dns.google/resolve?name=tudominio.com\\&type=A | python3 -m json.tool','DNS-over-HTTPS Google')">
+              <div class="cmd-card-title">🌐 DNS over HTTPS (Google)</div>
+              <div class="cmd-card-code">curl https://dns.google/resolve?name=DOMINIO&amp;type=A</div>
+            </div>
+            <div class="info-box info-box-yellow" style="margin-top:10px;">
+              <b>Con IP dinámica (ISP hogareño):</b> Usá un servicio de Dynamic DNS como <b>DuckDNS</b> (gratis) o <b>Cloudflare DDNS</b> para actualizar automáticamente tu IP cuando cambie.
+            </div>
+            <div class="cmd-card" onclick="runQuickCmd('curl \"https://www.duckdns.org/update?domains=tudominio&token=TU-TOKEN&ip=\"','Actualizar IP en DuckDNS')">
+              <div class="cmd-card-title">🦆 DuckDNS — Actualizar IP dinámica</div>
+              <div class="cmd-card-code">curl "https://www.duckdns.org/update?domains=...&token=..."</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: HOSTING -->
+      <div class="tab-content" id="ct-hosting">
+        <div class="card">
+          <div class="card-header"><span class="card-title">🖥️ Opciones de Hosting — Comparativa Completa</span></div>
+          <div class="info-box info-box-blue" style="margin-bottom:14px;">
+            Para una web estática (HTML/CSS/JS) como las que gestiona DevDeploy, las opciones gratuitas son excelentes. Para apps dinámicas o APIs, evaluá las opciones pagas.
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
+
+            <div class="plan-card recommended">
+              <div style="font-size:10px;color:var(--green);font-weight:700;margin-bottom:8px;">⭐ RECOMENDADO — WEB ESTÁTICA</div>
+              <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">Cloudflare Pages</div>
+              <div style="font-size:20px;font-weight:700;color:var(--green);margin:8px 0;">Gratis</div>
+              <div class="plan-feature yes">✓ HTTPS automático</div>
+              <div class="plan-feature yes">✓ CDN global</div>
+              <div class="plan-feature yes">✓ Deploy desde GitHub</div>
+              <div class="plan-feature yes">✓ Dominio propio gratis</div>
+              <div class="plan-feature yes">✓ Sin límite de builds</div>
+              <div class="plan-feature no">✗ Solo archivos estáticos</div>
+              <a href="https://pages.cloudflare.com" target="_blank" class="btn btn-success" style="margin-top:10px;width:100%;justify-content:center;">Usar →</a>
+            </div>
+
+            <div class="plan-card">
+              <div style="font-size:10px;color:var(--cyan);font-weight:700;margin-bottom:8px;">💡 SELF-HOSTED (este proyecto)</div>
+              <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">Docker + K8s Local</div>
+              <div style="font-size:20px;font-weight:700;color:var(--cyan);margin:8px 0;">$0</div>
+              <div class="plan-feature yes">✓ Control total</div>
+              <div class="plan-feature yes">✓ Sin límites</div>
+              <div class="plan-feature yes">✓ Archivos estáticos y dinámicos</div>
+              <div class="plan-feature yes">✓ Privacidad total</div>
+              <div class="plan-feature no">✗ IP pública necesaria</div>
+              <div class="plan-feature no">✗ Mantenimiento propio</div>
+              <button class="btn btn-primary" style="margin-top:10px;width:100%;justify-content:center;" onclick="showSection('server')">Configurar →</button>
+            </div>
+
+            <div class="plan-card">
+              <div style="font-size:10px;color:var(--yellow);font-weight:700;margin-bottom:8px;">💰 HOSTING CLÁSICO</div>
+              <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">VPS / Shared Hosting</div>
+              <div style="font-size:20px;font-weight:700;color:var(--yellow);margin:8px 0;">$3-20/mes</div>
+              <div class="plan-feature yes">✓ IP pública fija</div>
+              <div class="plan-feature yes">✓ Panel cPanel/Plesk</div>
+              <div class="plan-feature yes">✓ PHP/MySQL incluido</div>
+              <div class="plan-feature no">✗ Costo mensual</div>
+              <div class="plan-feature no">✗ Recursos limitados en shared</div>
+              <a href="https://hostinger.com" target="_blank" class="btn btn-warn" style="margin-top:10px;width:100%;justify-content:center;">Ver opciones →</a>
+            </div>
+          </div>
+
+          <!-- IP pública info -->
+          <div class="info-box info-box-yellow">
+            <b>💡 ¿Tengo IP pública para self-hosting?</b><br>
+            Verificá en <a href="https://whatismyip.com" target="_blank" style="color:var(--cyan);">whatismyip.com</a>. Si tu ISP te da IP dinámica, usá DuckDNS o Cloudflare Tunnel (gratis) que no requiere IP pública ni abrir puertos.<br><br>
+            <b>Cloudflare Tunnel</b> es la opción más segura y simple para self-hosting desde tu casa:
+          </div>
+          <div class="cmd-card" onclick="showSection('terminal');runQuickCmd('cloudflared tunnel create mi-webapp && cloudflared tunnel route dns mi-webapp tudominio.com','Crear Cloudflare Tunnel (sin IP pública)')">
+            <div class="cmd-card-title">🔒 Cloudflare Tunnel — exponer tu server sin IP pública</div>
+            <div class="cmd-card-code">cloudflared tunnel create mi-webapp && cloudflared tunnel route dns mi-webapp tudominio.com</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: EMAIL CORPORATIVO -->
+      <div class="tab-content" id="ct-email">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📧 Email Corporativo — Opciones Completas</span>
+            <span class="tag tag-cyan">nombre@tudominio.com</span>
+          </div>
+          <div class="info-box info-box-blue" style="margin-bottom:14px;">
+            Un email corporativo como <b>hola@tuempresa.com</b> da profesionalismo. Las opciones van desde gratuitas (auto-gestionadas) hasta servicios gestionados pagos.
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
+
+            <div class="plan-card">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+                <span class="step-badge badge-free">GRATIS</span>
+                <span class="step-badge badge-self">AUTO-GESTIONADO</span>
+              </div>
+              <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">Zoho Mail Free</div>
+              <div style="font-size:18px;font-weight:700;color:var(--green);margin:6px 0;">$0 / mes</div>
+              <div class="plan-feature yes">✓ Hasta 5 usuarios</div>
+              <div class="plan-feature yes">✓ 5 GB por buzón</div>
+              <div class="plan-feature yes">✓ Dominio propio</div>
+              <div class="plan-feature yes">✓ Webmail incluido</div>
+              <div class="plan-feature yes">✓ Sin publicidad</div>
+              <div class="plan-feature no">✗ Sin IMAP en free</div>
+              <div class="plan-feature no">✗ Apps móviles básicas</div>
+              <a href="https://zoho.com/mail" target="_blank" class="btn btn-success" style="margin-top:10px;width:100%;justify-content:center;">Crear cuenta →</a>
+            </div>
+
+            <div class="plan-card recommended">
+              <div style="font-size:10px;color:var(--green);font-weight:700;margin-bottom:8px;">⭐ RECOMENDADO — CORPORATIVO</div>
+              <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">Google Workspace</div>
+              <div style="font-size:18px;font-weight:700;color:var(--yellow);margin:6px 0;">$6 / user / mes</div>
+              <div class="plan-feature yes">✓ Gmail corporativo</div>
+              <div class="plan-feature yes">✓ Drive, Docs, Meet</div>
+              <div class="plan-feature yes">✓ 30 GB almacenamiento</div>
+              <div class="plan-feature yes">✓ 99.9% uptime garantizado</div>
+              <div class="plan-feature yes">✓ Soporte 24/7</div>
+              <div class="plan-feature yes">✓ IMAP/POP3/SMTP</div>
+              <a href="https://workspace.google.com" target="_blank" class="btn btn-warn" style="margin-top:10px;width:100%;justify-content:center;">Iniciar prueba →</a>
+            </div>
+
+            <div class="plan-card">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+                <span class="step-badge badge-self">AUTO-GESTIONADO</span>
+                <span class="step-badge badge-free">GRATIS</span>
+              </div>
+              <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">Mailcow (self-hosted)</div>
+              <div style="font-size:18px;font-weight:700;color:var(--purple);margin:6px 0;">$0 (VPS)</div>
+              <div class="plan-feature yes">✓ Control total</div>
+              <div class="plan-feature yes">✓ Usuarios ilimitados</div>
+              <div class="plan-feature yes">✓ Anti-spam integrado</div>
+              <div class="plan-feature yes">✓ Webmail moderno</div>
+              <div class="plan-feature no">✗ Requiere VPS ~$5/mes</div>
+              <div class="plan-feature no">✗ Mantenimiento propio</div>
+              <a href="https://mailcow.email" target="_blank" class="btn btn-purple" style="margin-top:10px;width:100%;justify-content:center;">Ver docs →</a>
+            </div>
+          </div>
+
+          <!-- Setup rápido Zoho -->
+          <div class="card" style="background:var(--bg3);border-color:var(--border2);">
+            <div class="card-header"><span class="card-title">⚡ Setup Rápido — Zoho Mail Gratis (paso a paso)</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:8px;background:var(--bg2);border-radius:6px;">
+                <div style="width:22px;height:22px;border-radius:50%;background:#3fb95022;color:var(--green);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;">1</div>
+                <div><div style="font-size:12px;color:var(--text);font-weight:600;">Registrarse en Zoho Mail</div><div style="font-size:11px;color:var(--text3);">Ir a zoho.com/mail → "Sign Up Free" → elegir "Free Plan" con dominio propio</div></div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:8px;background:var(--bg2);border-radius:6px;">
+                <div style="width:22px;height:22px;border-radius:50%;background:#3fb95022;color:var(--green);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;">2</div>
+                <div><div style="font-size:12px;color:var(--text);font-weight:600;">Agregar tu dominio</div><div style="font-size:11px;color:var(--text3);">En el wizard: "Add Domain" → ingresás tudominio.com</div></div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:8px;background:var(--bg2);border-radius:6px;">
+                <div style="width:22px;height:22px;border-radius:50%;background:#3fb95022;color:var(--green);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;">3</div>
+                <div><div style="font-size:12px;color:var(--text);font-weight:600;">Verificar el dominio (DNS TXT)</div>
+                  <div style="font-size:11px;color:var(--text3);margin-top:4px;">Zoho te da un código TXT. En tu DNS (Cloudflare/Namecheap) agregás:</div>
+                  <div style="font-size:10px;font-family:var(--mono);background:var(--bg);padding:6px 8px;border-radius:4px;margin-top:4px;color:var(--cyan);">Tipo: TXT | Nombre: @ | Valor: zoho-verification=zmxxxxxxxx</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:8px;background:var(--bg2);border-radius:6px;">
+                <div style="width:22px;height:22px;border-radius:50%;background:#3fb95022;color:var(--green);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;">4</div>
+                <div><div style="font-size:12px;color:var(--text);font-weight:600;">Configurar registros MX en tu DNS</div>
+                  <div style="font-size:11px;color:var(--text3);margin-top:4px;">Agrega estos registros MX en tu proveedor de DNS:</div>
+                  <div style="font-size:10px;font-family:var(--mono);background:var(--bg);padding:6px 8px;border-radius:4px;margin-top:4px;color:var(--cyan);">MX @ mx.zoho.com (prioridad 10)<br>MX @ mx2.zoho.com (prioridad 20)<br>MX @ mx3.zoho.com (prioridad 50)</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:8px;background:var(--bg2);border-radius:6px;">
+                <div style="width:22px;height:22px;border-radius:50%;background:#3fb95022;color:var(--green);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;">5</div>
+                <div><div style="font-size:12px;color:var(--text);font-weight:600;">Crear buzones y listo</div><div style="font-size:11px;color:var(--text3);">Zoho Admin → crear hola@tudominio.com, info@tudominio.com, etc.</div></div>
+              </div>
+            </div>
+            <div class="info-box info-box-green" style="margin-top:10px;">
+              ✓ Tiempo estimado: <b>20-30 minutos</b>. El email funciona en 5-15 min (propagación DNS).
+            </div>
+          </div>
+
+          <!-- Setup Mailcow Docker -->
+          <div class="card" style="background:var(--bg3);border-color:var(--border2);margin-top:14px;">
+            <div class="card-header"><span class="card-title">🐳 Deploy Mailcow con Docker (self-hosted)</span><span class="tag tag-purple">Avanzado</span></div>
+            <pre style="font-size:11px;font-family:var(--mono);color:var(--text2);background:var(--bg);padding:12px;border-radius:6px;line-height:1.7;overflow-x:auto;"># Requisitos: VPS con 1 CPU, 2GB RAM, Ubuntu 22.04, IP pública
+# Puerto 25 (SMTP) debe estar desbloqueado por tu proveedor VPS
+
+git clone https://github.com/mailcow/mailcow-dockerized
+cd mailcow-dockerized
+./generate_config.sh   # ingresás: mail.tudominio.com
+docker-compose pull && docker-compose up -d
+
+# Panel admin: https://mail.tudominio.com
+# Usuario: admin / Password: moohoo (cambiar inmediatamente)
+
+# Registros DNS necesarios:
+# A      mail        →  IP_DEL_VPS
+# MX     @           →  mail.tudominio.com (prioridad 10)
+# TXT    @           →  v=spf1 mx ~all
+# TXT    _dmarc      →  v=DMARC1; p=quarantine; rua=mailto:dmarc@tudominio.com</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: SSL & DEPLOY -->
+      <div class="tab-content" id="ct-ssl">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><span class="card-title">🔒 SSL / HTTPS — Certificado Gratuito</span></div>
+            <div class="info-box info-box-green" style="margin-bottom:12px;">
+              <b>Let's Encrypt</b> emite certificados SSL gratuitos y renovables automáticamente cada 90 días. Es el estándar actual para HTTPS gratuito.
+            </div>
+            <div class="cmd-card" onclick="showSection('terminal');runQuickCmd('apt install certbot python3-certbot-nginx -y && certbot --nginx -d tudominio.com -d www.tudominio.com','Instalar SSL con Certbot + nginx')">
+              <div class="cmd-card-title">🔒 Certbot — SSL automático con nginx</div>
+              <div class="cmd-card-code">certbot --nginx -d tudominio.com -d www.tudominio.com</div>
+            </div>
+            <div class="cmd-card" onclick="showSection('terminal');runQuickCmd('certbot renew --dry-run','Probar renovación automática SSL')">
+              <div class="cmd-card-title">♻️ Auto-renovar SSL</div>
+              <div class="cmd-card-code">certbot renew --dry-run</div>
+            </div>
+            <div class="cmd-card" onclick="showSection('terminal');runQuickCmd('kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml','Instalar cert-manager en K8s')">
+              <div class="cmd-card-title">☸️ cert-manager en Kubernetes</div>
+              <div class="cmd-card-code">kubectl apply -f cert-manager.yaml</div>
+            </div>
+            <div class="info-box info-box-blue" style="margin-top:10px;">
+              <b>Opción más simple:</b> Si usás Cloudflare como proxy (naranja), el HTTPS es automático sin instalar nada — Cloudflare termina el SSL por vos.
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">🚀 Deploy Final — Web Corporativa Completa</span></div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:10px;font-family:var(--mono);">STACK RECOMENDADO (todo gratis o mínimo costo)</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border-radius:6px;font-size:12px;">
+                <span>🌐</span><div style="flex:1;"><b>Dominio:</b> Namecheap .com (~$9/año) o NIC.ar (gratis para .ar)</div><span class="tag tag-yellow">$9/año</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border-radius:6px;font-size:12px;">
+                <span>🔀</span><div style="flex:1;"><b>DNS + CDN:</b> Cloudflare (gratis, proxy, DDoS protection)</div><span class="tag tag-green">Gratis</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border-radius:6px;font-size:12px;">
+                <span>🖥️</span><div style="flex:1;"><b>Hosting:</b> Cloudflare Pages o self-hosted con este proyecto</div><span class="tag tag-green">Gratis</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border-radius:6px;font-size:12px;">
+                <span>📧</span><div style="flex:1;"><b>Email:</b> Zoho Mail Free (hasta 5 cuentas)</div><span class="tag tag-green">Gratis</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border-radius:6px;font-size:12px;">
+                <span>🔒</span><div style="flex:1;"><b>SSL:</b> Let's Encrypt / Cloudflare automático</div><span class="tag tag-green">Gratis</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border-radius:6px;font-size:12px;">
+                <span>🐙</span><div style="flex:1;"><b>CI/CD:</b> GitHub Actions → auto-deploy en cada push</div><span class="tag tag-green">Gratis</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg4);border-radius:6px;font-size:13px;font-weight:600;border:1px solid var(--green);">
+                <span>💰</span><div style="flex:1;color:var(--green);">COSTO TOTAL ANUAL</div><span class="tag tag-green" style="font-size:12px;">~$9 USD/año</span>
+              </div>
+            </div>
+            <button class="btn btn-success" style="width:100%;justify-content:center;margin-top:12px;" onclick="startCorporateWizard()">▶ Iniciar Wizard Completo</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: CHECKLIST -->
+      <div class="tab-content" id="ct-checklist">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">✅ Checklist — Web Corporativa Completa</span>
+            <div style="display:flex;gap:8px;">
+              <span id="checklist-progress" style="font-size:12px;color:var(--text3);">0 / 20 completados</span>
+              <button class="btn btn-sm btn-ghost" onclick="resetChecklist()">↺ Reiniciar</button>
+            </div>
+          </div>
+          <div class="progress" style="height:8px;margin-bottom:16px;">
+            <div class="progress-fill fill-green" id="checklist-bar" style="width:0%;transition:width .4s;"></div>
+          </div>
+          <div id="checklist-items" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== SECTION: CHATBOT ==================== -->
+    <div class="section" id="s-chatbot">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;margin-bottom:0;">
+        <div class="card-header" style="flex-shrink:0;">
+          <span class="card-title">🤖 Asistente DevDeploy — Powered by Claude</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn btn-sm btn-ghost" onclick="clearChat()">🗑️ Nueva conversación</button>
+            <span class="tag tag-green" id="chat-status-tag">⚡ Local</span>
+          </div>
+        </div>
+
+        <!-- API KEY PANEL -->
+        <div id="apikey-panel" style="padding:12px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;flex-shrink:0;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div style="font-size:12px;color:var(--yellow);font-weight:600;white-space:nowrap;">🔑 Claude API Key <span style="color:var(--text3);font-weight:400;">(opcional — para respuestas con IA real)</span></div>
+            <div style="flex:1;min-width:200px;display:flex;gap:6px;">
+              <input id="api-key-input" type="password" class="form-input" placeholder="sk-ant-api03-..." style="flex:1;font-size:11px;padding:5px 10px;"
+                oninput="onApiKeyChange(this.value)">
+              <button class="btn btn-sm btn-primary" onclick="saveApiKey()" style="white-space:nowrap;">Guardar</button>
+              <button class="btn btn-sm btn-ghost" onclick="toggleKeyVisibility()" style="white-space:nowrap;" id="show-key-btn">👁</button>
+            </div>
+          </div>
+          <div id="apikey-status" style="margin-top:8px;font-size:10px;color:var(--text3);font-family:var(--mono);">
+            ℹ Sin API key: respuestas inteligentes locales. Con API key: Claude real.
+            <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--cyan);text-decoration:none;margin-left:6px;">Obtener API key →</a>
+          </div>
+        </div>
+
+        <div style="padding:8px 14px;background:var(--bg3);border-radius:6px;margin-bottom:10px;font-size:11px;color:var(--text3);flex-shrink:0;">
+          💡 Preguntame sobre Docker, Kubernetes, GitHub, AWS, GCP, Azure, Databricks, MLOps, o cómo usar DevDeploy.
+        </div>
+        <div id="chat-messages">
+          <div class="msg msg-bot"><div class="msg-label">🤖 DevDeploy Assistant</div>¡Hola! Soy tu asistente de DevDeploy Manager. Puedo ayudarte con:<br><br>
+          🌐 <b>Servidor web</b> — deployar, modos online/privado/offline<br>
+          🐳 <b>Docker & K8s</b> — comandos, manifiestos, troubleshooting<br>
+          🐙 <b>GitHub</b> — workflows, CI/CD, estructura de repos<br>
+          ☁️ <b>Cloud</b> — AWS, GCP, Azure, Databricks<br>
+          🧠 <b>MLOps</b> — deploy de modelos, MLflow, pipelines<br><br>
+          👆 Podés usar el chatbot <b>sin API key</b> con respuestas locales, o ingresar tu API key de Claude para IA real.<br><br>
+          ¿En qué te puedo ayudar?</div>
+        </div>
+        <div class="chat-input-area">
+          <textarea id="chat-input" placeholder="Preguntá sobre Docker, K8s, GitHub, AWS, MLOps..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}"></textarea>
+          <button class="btn btn-primary" onclick="sendChat()" style="padding:8px 16px;height:42px;">Enviar</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+// ==================== STATE ====================
+const state = {
+  mode: 'online',
+  files: [],
+  deployCount: 0,
+  cmdCount: 0,
+  startTime: Date.now(),
+  accessList: ['admin'],
+  chatHistory: [],
+  currentCloud: 'aws'
+};
+
+// ==================== NAVIGATION ====================
+const sectionMeta = {
+  server:    {title:'🌐 Web Server Manager',   sub:'Gestión y despliegue de aplicaciones web locales'},
+  terminal:  {title:'💻 Terminal / Logs',       sub:'Historial en tiempo real de comandos ejecutados'},
+  github:    {title:'🐙 GitHub Manager',        sub:'Control de versiones, CI/CD y estructura del repositorio'},
+  docker:    {title:'🐳 Docker / Kubernetes',   sub:'Contenedores, pods, imágenes y manifiestos'},
+  devops:    {title:'⚙️ DevOps / MLOps',        sub:'Pipelines, modelos y monitoreo del sistema'},
+  cloud:     {title:'☁️ Cloud Platforms',        sub:'AWS · GCP · Azure · Databricks'},
+  chatbot:   {title:'🤖 ChatBot IA',            sub:'Asistente inteligente — Powered by Claude'},
+  corporate: {title:'🏢 Web Corporativa',       sub:'Dominio · DNS · Email corporativo · SSL · Wizard paso a paso'}
+};
+
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const sec = document.getElementById('s-'+id);
+  if(sec) sec.classList.add('active');
+  const navItems = document.querySelectorAll('.nav-item');
+  navItems.forEach(n=>{if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+id+"'"))n.classList.add('active');});
+  const meta = sectionMeta[id];
+  if(meta){document.getElementById('header-title').textContent=meta.title;document.getElementById('header-sub').textContent=meta.sub;}
+}
+
+// ==================== TABS ====================
+function switchTab(groupId, targetId, el) {
+  const group = document.getElementById(groupId);
+  if(!group)return;
+  group.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  const parent = document.getElementById('s-docker');
+  parent.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  const target = document.getElementById(targetId);
+  if(target)target.classList.add('active');
+}
+
+// ==================== CLOUD TABS ====================
+function switchCloud(cloud) {
+  ['aws','gcp','azure','databricks'].forEach(c=>{
+    const tab = document.getElementById('ctab-'+c);
+    const panel = document.getElementById('cloud-'+c);
+    if(panel) panel.style.display = c===cloud?'block':'none';
+    if(tab) {
+      tab.className = 'cloud-tab';
+      if(c===cloud) tab.className += ' active-'+c;
+    }
+  });
+  state.currentCloud = cloud;
+}
+
+// ==================== TERMINAL ====================
+function log(html, delay=0) {
+  return new Promise(resolve=>{
+    setTimeout(()=>{
+      const tb = document.getElementById('terminal-body');
+      const div = document.createElement('div');
+      div.className = 'cmd-line';
+      div.innerHTML = html;
+      const cursor = tb.querySelector('.blink');
+      if(cursor) cursor.parentElement.remove();
+      tb.appendChild(div);
+      tb.scrollTop = tb.scrollHeight;
+      state.cmdCount++;
+      document.getElementById('cmd-count').textContent = state.cmdCount + ' líneas';
+      document.getElementById('nav-term-badge').textContent = state.cmdCount;
+      resolve();
+    }, delay);
+  });
+}
+
+async function typeCommand(cmd, description, outputLines, isError=false) {
+  await log(`<span class="cmd-prompt">usuario@devdeploy:~$ </span><span class="cmd-text">${cmd}</span>`);
+  if(description) await log(`<span class="cmd-comment"># ${description}</span>`, 100);
+  for(let i=0;i<outputLines.length;i++){
+    const line = outputLines[i];
+    const cls = isError?'cmd-error':(line.startsWith('✓')||line.includes('success')||line.includes('created')||line.includes('applied')?'cmd-success':(line.startsWith('⚠')||line.includes('warning')?'cmd-warn':(line.startsWith('→')||line.startsWith('Sending')||line.startsWith('Step')||line.startsWith('Writing')||line.startsWith('Counting')?'cmd-out':'cmd-out')));
+    await log(`<span class="${cls}">${line}</span>`, 80+i*40);
+  }
+  await log('', 50);
+}
+
+function clearTerminal() {
+  const tb = document.getElementById('terminal-body');
+  tb.innerHTML = '<div class="cmd-line"><span class="cmd-comment"># Terminal limpiada — listo</span></div><div class="cmd-line"><span class="cmd-prompt">usuario@devdeploy:~$ </span><span class="cmd-text blink">▌</span></div>';
+  state.cmdCount = 0;
+  document.getElementById('cmd-count').textContent = '0 líneas';
+}
+
+async function runQuickCmd(cmd, description) {
+  showSection('terminal');
+  const fakeOutputs = {
+    'docker ps -a': ['CONTAINER ID   IMAGE           COMMAND                  STATUS','a1b2c3d4e5f6   nginx:alpine    "/docker-entrypoint.…"   Up 2 hours','e7f8a9b0c1d2   registry:2      "/entrypoint.sh /etc…"   Up 5 hours','✓ 3 contenedores listados'],
+    'kubectl get pods -A': ['NAMESPACE     NAME                      READY   STATUS    RESTARTS','production    webapp-7d4f8b9c6-xk2ld   2/2     Running   0','production    webapp-7d4f8b9c6-mn3pq   2/2     Running   0','production    webapp-7d4f8b9c6-rs7tu   2/2     Running   0','✓ Todos los pods running'],
+    'git status && git log --oneline -5': ['On branch main','nothing to commit, working tree clean','a1b2c3d feat: actualización de contenido web','e5f6a7b chore: agregar manifests K8s','c8d9e0f init: estructura inicial del proyecto','✓ Repositorio sincronizado'],
+    'docker stats --no-stream': ['CONTAINER    CPU %   MEM USAGE / LIMIT   MEM %   NET I/O','webapp       0.1%    4.2MiB / 7.77GiB    0.05%   1.2kB / 890B','registry     0.0%    9.1MiB / 7.77GiB    0.11%   0B / 0B'],
+    'kubectl get services -A': ['NAMESPACE     NAME              TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)','production    webapp-service    NodePort   10.96.145.200   <none>        80:30080/TCP','✓ Services listados'],
+    'docker images': ['REPOSITORY           TAG       IMAGE ID       CREATED       SIZE','webapp               latest    a1b2c3d4e5f6   2 minutes ago   23.4MB','nginx                alpine    3f8a4339aadd   2 weeks ago     22.1MB','registry             2         d3241e050ce6   5 weeks ago     24.2MB','✓ Imágenes locales listadas']
+  };
+  const outputs = fakeOutputs[cmd] || ['→ Ejecutando comando...', '✓ Comando completado exitosamente'];
+  await typeCommand(cmd, description, outputs);
+  notify('Comando ejecutado: '+description, 'info');
+}
+
+// ==================== DEPLOY SEQUENCE ====================
+async function deployApp() {
+  const name = document.getElementById('proj-name').value || 'webapp';
+  const port = document.getElementById('proj-port').value || '8080';
+  const image = document.getElementById('proj-image').value || 'nginx:alpine';
+  const repo = document.getElementById('proj-repo').value || 'github.com/usuario/webapp';
+  showSection('terminal');
+  notify('🚀 Iniciando deploy completo...', 'info');
+
+  await log(`<span class="cmd-comment">╔══════════════════════════════════════════════════════╗</span>`);
+  await log(`<span class="cmd-comment">║  DevDeploy Manager — Secuencia de Deploy Completa   ║</span>`);
+  await log(`<span class="cmd-comment">╚══════════════════════════════════════════════════════╝</span>`);
+  await log(`<span class="cmd-comment"># Proyecto: ${name} | Puerto: ${port} | ${new Date().toLocaleString()}</span>`, 200);
+  await log('', 100);
+
+  // STEP 1: Docker Build
+  await log(`<span class="cmd-info">━━━ [1/5] DOCKER BUILD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>`, 200);
+  await typeCommand(`docker build -t ${name}:latest -f Dockerfile .`, 'Construyendo imagen Docker', [
+    `Sending build context to Docker daemon  2.048kB`,
+    `Step 1/6 : FROM ${image}`,
+    ` ---> 3f8a4339aadd`,
+    `Step 2/6 : COPY src/ /usr/share/nginx/html/`,
+    ` ---> Using cache`,
+    ` ---> 7a8b9c3d4e5f`,
+    `Step 3/6 : COPY nginx.conf /etc/nginx/conf.d/default.conf`,
+    ` ---> a1b2c3d4e5f6`,
+    `Step 4/6 : EXPOSE 80`,
+    ` ---> Running in 9876543210ab`,
+    `Step 5/6 : HEALTHCHECK CMD curl -f http://localhost/ || exit 1`,
+    ` ---> 1234567890ab`,
+    `Step 6/6 : CMD ["nginx", "-g", "daemon off;"]`,
+    `Successfully built 1234567890ab`,
+    `✓ Successfully tagged ${name}:latest`,
+  ]);
+
+  // STEP 2: Push to local registry
+  await log(`<span class="cmd-info">━━━ [2/5] PUSH AL REGISTRY LOCAL ━━━━━━━━━━━━━━━━━━━</span>`, 200);
+  await typeCommand(`docker tag ${name}:latest localhost:5000/${name}:latest`, 'Taggear imagen para registry local', ['✓ Imagen taggeada']);
+  await typeCommand(`docker push localhost:5000/${name}:latest`, 'Push al registry local', [
+    `The push refers to repository [localhost:5000/${name}]`,
+    `a1b2c3d4e5f6: Pushed`,
+    `7a8b9c3d4e5f: Pushed`,
+    `3f8a4339aadd: Pushed`,
+    `latest: digest: sha256:abc123def456 size: 1234`,
+    `✓ Push exitoso → localhost:5000/${name}:latest`,
+  ]);
+
+  // STEP 3: Kubernetes deploy
+  await log(`<span class="cmd-info">━━━ [3/5] KUBERNETES DEPLOYMENT ━━━━━━━━━━━━━━━━━━━━</span>`, 200);
+  await typeCommand(`kubectl apply -f k8s/namespace.yaml`, 'Crear namespace production', ['namespace/production configured','✓ Namespace listo']);
+  await typeCommand(`kubectl apply -f k8s/configmap.yaml`, 'Aplicar ConfigMap', ['configmap/webapp-config created','✓ ConfigMap aplicado']);
+  await typeCommand(`kubectl apply -f k8s/deployment.yaml`, 'Aplicar Deployment', [
+    `deployment.apps/${name} created`,
+    `✓ Deployment creado con 3 réplicas`,
+  ]);
+  await typeCommand(`kubectl apply -f k8s/service.yaml`, 'Aplicar Service NodePort', [
+    `service/${name}-service created`,
+    `✓ Service expuesto en puerto ${port}`,
+  ]);
+  await typeCommand(`kubectl apply -f k8s/ingress.yaml`, 'Aplicar Ingress', [
+    `ingress.networking.k8s.io/${name}-ingress created`,
+    `✓ Ingress configurado`,
+  ]);
+  await typeCommand(`kubectl rollout status deployment/${name} -n production`, 'Verificar rollout', [
+    `Waiting for deployment "${name}" rollout to finish: 0 of 3 updated replicas are available...`,
+    `Waiting for deployment "${name}" rollout to finish: 1 of 3 updated replicas are available...`,
+    `Waiting for deployment "${name}" rollout to finish: 2 of 3 updated replicas are available...`,
+    `✓ deployment "${name}" successfully rolled out`,
+  ]);
+  await typeCommand(`kubectl get pods -n production -l app=${name}`, 'Verificar pods', [
+    `NAME                      READY   STATUS    RESTARTS   AGE`,
+    `${name}-7d4f8b9c6-xk2ld   2/2     Running   0          15s`,
+    `${name}-7d4f8b9c6-mn3pq   2/2     Running   0          14s`,
+    `${name}-7d4f8b9c6-rs7tu   2/2     Running   0          13s`,
+    `✓ 3/3 pods running y saludables`,
+  ]);
+
+  // STEP 4: Docker run (local access)
+  await log(`<span class="cmd-info">━━━ [4/5] SERVIDOR LOCAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>`, 200);
+  await typeCommand(`docker stop ${name} 2>/dev/null || true`, 'Detener contenedor anterior si existe', ['✓ Limpieza previa completada']);
+  await typeCommand(`docker run -d -p ${port}:80 --name ${name} --restart always localhost:5000/${name}:latest`, 'Iniciar servidor web local', [
+    `a1b2c3d4e5f678901234567890abcdef12345678`,
+    `✓ Contenedor iniciado`,
+    `✓ Servidor web accesible en http://localhost:${port}`,
+  ]);
+
+  // STEP 5: GitHub
+  await log(`<span class="cmd-info">━━━ [5/5] GITHUB SYNC ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>`, 200);
+  await typeCommand(`git add .`, 'Stagear todos los archivos', ['✓ Archivos preparados para commit']);
+  await typeCommand(`git commit -m "feat: deploy ${name} v1.${state.deployCount+1}.0 — DevDeploy Manager"`, 'Crear commit', [
+    `[main (root-commit) a1b2c3d] feat: deploy ${name} v1.${state.deployCount+1}.0`,
+    ` ${state.files.length||3} files changed, 48 insertions(+)`,
+    ` create mode 100644 Dockerfile`,
+    ` create mode 100644 k8s/deployment.yaml`,
+    ` create mode 100644 src/index.html`,
+    `✓ Commit creado exitosamente`,
+  ]);
+  await typeCommand(`git push -u origin main`, 'Push a GitHub', [
+    `Enumerating objects: ${state.files.length||5}, done.`,
+    `Counting objects: 100% (${state.files.length||5}/${state.files.length||5}), done.`,
+    `Writing objects: 100% (${state.files.length||5}/${state.files.length||5}), 1.23 KiB | 1.23 MiB/s, done.`,
+    `To https://${repo}.git`,
+    ` * [new branch]      main -> main`,
+    `Branch 'main' set up to track remote branch 'main' from 'origin'.`,
+    `✓ Archivos actualizados en GitHub ✓`,
+  ]);
+
+  // Summary
+  await log(`<span class="cmd-info">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>`, 200);
+  await log(`<span class="cmd-success">✓ ¡DEPLOY COMPLETADO EXITOSAMENTE!</span>`, 200);
+  await log(`<span class="cmd-success">✓ Servidor online → http://localhost:${port}</span>`, 100);
+  await log(`<span class="cmd-success">✓ GitHub actualizado → ${repo}</span>`, 100);
+  await log(`<span class="cmd-success">✓ K8s: 3 replicas corriendo en producción</span>`, 100);
+  await log(`<span class="cmd-prompt">usuario@devdeploy:~$ </span><span class="blink">▌</span>`, 200);
+
+  state.deployCount++;
+  state.mode = 'online';
+  updateModeUI('online');
+  document.getElementById('m-files').textContent = state.files.length || 3;
+  document.getElementById('last-deploy-time').textContent = 'último deploy: ahora';
+  updateCommitTable(name);
+  notify('🚀 Deploy completado. Servidor online en :'+port, 'success');
+  notify('✓ Archivos actualizados en GitHub', 'success');
+}
+
+function updateCommitTable(name) {
+  const tbody = document.getElementById('commit-table');
+  const row = document.createElement('tr');
+  row.innerHTML = `<td>a1b2c3d</td><td>feat: deploy ${name} v1.${state.deployCount}.0</td><td>usuario</td><td><span class="tag tag-cyan">main</span></td><td>ahora</td><td><span class="tag tag-green">✓ pushed</span></td>`;
+  tbody.insertBefore(row, tbody.firstChild);
+}
+
+async function takeOffline() {
+  const name = document.getElementById('proj-name').value || 'webapp';
+  showSection('terminal');
+  notify('⛔ Poniendo servidor offline...', 'warn');
+
+  await log(`<span class="cmd-comment">╔═══════════════════════════════════════════╗</span>`);
+  await log(`<span class="cmd-comment">║   DevDeploy Manager — Modo OFFLINE        ║</span>`);
+  await log(`<span class="cmd-comment">╚═══════════════════════════════════════════╝</span>`);
+
+  await typeCommand(`kubectl scale deployment/${name} --replicas=0 -n production`, 'Escalar a 0 réplicas (offline K8s)', [
+    `deployment.apps/${name} scaled`,
+    `✓ Deployment escalado a 0 — sin tráfico`,
+  ]);
+  await typeCommand(`docker stop ${name}`, 'Detener contenedor local', [
+    `${name}`,
+    `✓ Contenedor detenido`,
+  ]);
+  await typeCommand(`kubectl delete ingress ${name}-ingress -n production`, 'Eliminar Ingress (acceso externo)', [
+    `ingress.networking.k8s.io "${name}-ingress" deleted`,
+    `✓ Acceso externo removido`,
+  ]);
+  await log(`<span class="cmd-success">✓ Servidor offline. Datos y configuración preservados.</span>`, 200);
+  await log(`<span class="cmd-prompt">usuario@devdeploy:~$ </span><span class="blink">▌</span>`, 100);
+
+  state.mode = 'offline';
+  updateModeUI('offline');
+  notify('⛔ Servidor offline correctamente', 'warn');
+}
+
+async function githubSync() {
+  const msg = document.getElementById('gh-commit-msg').value || 'chore: actualización de contenido';
+  showSection('terminal');
+  notify('🐙 Sincronizando con GitHub...', 'info');
+
+  await log(`<span class="cmd-comment"># Sincronización GitHub — ${new Date().toLocaleString()}</span>`);
+  await typeCommand(`git add -A`, 'Agregar todos los cambios', ['✓ Cambios preparados']);
+  await typeCommand(`git status`, 'Ver estado del repositorio', [
+    `On branch main`,
+    `Your branch is up to date with 'origin/main'.`,
+    `Changes to be committed:`,
+    `  modified:   src/index.html`,
+    `  modified:   src/styles.css`,
+    `✓ Archivos listos para commit`,
+  ]);
+  await typeCommand(`git commit -m "${msg}"`, 'Crear commit', [
+    `[main a1b2c3d] ${msg}`,
+    ` 2 files changed, 15 insertions(+), 3 deletions(-)`,
+    `✓ Commit creado`,
+  ]);
+  await typeCommand(`git push origin main`, 'Push a GitHub', [
+    `Enumerating objects: 5, done.`,
+    `Counting objects: 100% (5/5), done.`,
+    `Writing objects: 100% (5/5), 892 bytes | 892.00 KiB/s, done.`,
+    `To https://github.com/usuario/webapp.git`,
+    `   a1b2c3d..e5f6a7b  main -> main`,
+    `✓ Archivos actualizados en GitHub ✓`,
+  ]);
+  await log(`<span class="cmd-prompt">usuario@devdeploy:~$ </span><span class="blink">▌</span>`, 100);
+  notify('✓ Archivos actualizados en GitHub', 'success');
+}
+
+async function githubCreateRelease() {
+  showSection('terminal');
+  const name = document.getElementById('proj-name').value || 'webapp';
+  await typeCommand(`git tag -a v1.${state.deployCount}.0 -m "Release v1.${state.deployCount}.0"`, 'Crear tag de release', ['✓ Tag creado']);
+  await typeCommand(`git push origin v1.${state.deployCount}.0`, 'Push del tag', [
+    `To https://github.com/usuario/${name}.git`,
+    ` * [new tag]         v1.${state.deployCount}.0 -> v1.${state.deployCount}.0`,
+    `✓ Release tag publicado en GitHub`,
+  ]);
+  await typeCommand(`gh release create v1.${state.deployCount}.0 --title "Release v1.${state.deployCount}.0" --notes "Deploy automático por DevDeploy Manager"`, 'Crear GitHub Release', [
+    `✓ Release v1.${state.deployCount}.0 creado en GitHub`,
+    `https://github.com/usuario/${name}/releases/tag/v1.${state.deployCount}.0`,
+  ]);
+  notify('🏷️ Release v1.'+state.deployCount+'.0 creado en GitHub', 'success');
+}
+
+async function runCloudCmd(platform, cmd, desc) {
+  showSection('terminal');
+  const icons = {aws:'🟠',gcp:'🔵',azure:'🔷',databricks:'🔴'};
+  await log(`<span class="cmd-comment"># ${icons[platform]||'☁️'} ${platform.toUpperCase()} — ${desc}</span>`);
+  await typeCommand(cmd, desc, [
+    `→ Autenticando con ${platform.toUpperCase()}...`,
+    `→ Ejecutando: ${desc}`,
+    `✓ Comando completado exitosamente`,
+    `✓ Operación en ${platform.toUpperCase()} finalizada`,
+  ]);
+  notify(`✓ ${desc} — ${platform.toUpperCase()}`, 'success');
+}
+
+// ==================== MODE ====================
+function setMode(mode) {
+  if(mode === 'online' && state.mode !== 'online') {
+    deployApp();
+    return;
+  }
+  if(mode === 'offline') { takeOffline(); return; }
+  state.mode = mode;
+  updateModeUI(mode);
+  if(mode === 'private') {
+    document.getElementById('private-panel').style.display = 'block';
+    activatePrivateMode();
+    notify('🔒 Modo privado activado', 'warn');
+  } else {
+    document.getElementById('private-panel').style.display = 'none';
+  }
+}
+
+async function activatePrivateMode() {
+  showSection('terminal');
+  const name = document.getElementById('proj-name').value || 'webapp';
+  await log(`<span class="cmd-comment"># Activando modo privado — autenticación básica</span>`);
+  await typeCommand(`kubectl apply -f k8s/auth-secret.yaml`, 'Crear secret de autenticación', ['secret/webapp-auth created','✓ Credenciales configuradas']);
+  await typeCommand(`kubectl apply -f k8s/auth-ingress.yaml`, 'Aplicar Ingress con autenticación', [`ingress.networking.k8s.io/${name}-ingress configured`,'✓ Modo privado activo — solo usuarios autorizados']);
+  notify('🔒 Servidor en modo privado', 'warn');
+}
+
+function updateModeUI(mode) {
+  ['online','private','offline'].forEach(m=>{
+    document.getElementById('pill-'+m).className = 'mode-pill';
+  });
+  const classes = {online:'active-online',private:'active-private',offline:'active-offline'};
+  document.getElementById('pill-'+mode).classList.add(classes[mode]);
+  const dot = document.getElementById('global-dot');
+  dot.className = 'status-dot dot-pulse';
+  const label = document.getElementById('global-label');
+  const statusTag = document.getElementById('url-status-tag');
+  const badgeEl = document.getElementById('nav-server-badge');
+  if(mode==='online'){dot.classList.add('dot-online');label.textContent='Servidor Online';badgeEl.className='badge badge-green';badgeEl.textContent='Online';statusTag.className='tag tag-green';statusTag.textContent='🟢 Online';document.getElementById('m-status').textContent='🟢';}
+  else if(mode==='private'){dot.className='status-dot dot-private dot-pulse';label.textContent='Servidor Privado';badgeEl.className='badge badge-yellow';badgeEl.textContent='Privado';statusTag.className='tag tag-yellow';statusTag.textContent='🔒 Privado';document.getElementById('m-status').textContent='🔒';}
+  else{dot.className='status-dot dot-offline';label.textContent='Servidor Offline';badgeEl.className='badge badge-red';badgeEl.textContent='Offline';statusTag.className='tag tag-red';statusTag.textContent='⛔ Offline';document.getElementById('m-status').textContent='⛔';}
+}
+
+// ==================== FILES ====================
+function handleFiles(fileList) {
+  Array.from(fileList).forEach(f=>{state.files.push(f);});
+  renderFileList();
+  document.getElementById('upload-zone').style.display = state.files.length > 2 ? 'none' : '';
+  document.getElementById('m-files').textContent = state.files.length;
+  updateDockerfile();
+  notify(`✓ ${fileList.length} archivo(s) cargados`, 'success');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag');
+  handleFiles(e.dataTransfer.files);
+}
+
+function renderFileList() {
+  const icons = {html:'🌐',htm:'🌐',css:'🎨',js:'⚡',json:'📋',md:'📝',xml:'📄',svg:'🖼️'};
+  document.getElementById('file-list').innerHTML = state.files.map((f,i)=>{
+    const ext = f.name.split('.').pop().toLowerCase();
+    const size = f.size < 1024 ? f.size+'B' : (f.size<1048576?(f.size/1024).toFixed(1)+'KB':(f.size/1048576).toFixed(1)+'MB');
+    return `<div class="file-item"><span class="file-icon">${icons[ext]||'📄'}</span><span class="file-name">${f.name}</span><span class="file-size">${size}</span><button class="btn btn-sm btn-danger" onclick="removeFile(${i})" style="padding:2px 6px;">✕</button></div>`;
+  }).join('');
+}
+
+function removeFile(i) {
+  state.files.splice(i,1);
+  renderFileList();
+  document.getElementById('m-files').textContent = state.files.length;
+}
+
+function updateDockerfile() {
+  const name = document.getElementById('proj-name').value || 'webapp';
+  const image = document.getElementById('proj-image').value || 'nginx:alpine';
+  document.getElementById('dockerfile-preview').textContent =
+`# DevDeploy Manager — Dockerfile auto-generado
+FROM ${image}
+
+LABEL maintainer="DevDeploy Manager"
+LABEL version="1.0"
+LABEL project="${name}"
+
+# Copiar archivos web (${state.files.length} archivos cargados)
+COPY src/ /usr/share/nginx/html/
+
+# Configuración nginx personalizada
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\
+  CMD curl -f http://localhost/ || exit 1
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]`;
+  document.getElementById('k8s-manifest').textContent =
+`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${name}
+  namespace: production
+  labels:
+    app: ${name}
+    version: "1.0"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ${name}
+  template:
+    metadata:
+      labels:
+        app: ${name}
+    spec:
+      containers:
+      - name: ${name}
+        image: localhost:5000/${name}:latest
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${name}-service
+  namespace: production
+spec:
+  selector:
+    app: ${name}
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: ${document.getElementById('proj-port').value||'30080'}
+  type: NodePort`;
+}
+
+function scaleUp() {
+  const name = document.getElementById('proj-name').value||'webapp';
+  runQuickCmd(`kubectl scale deployment/${name} --replicas=5 -n production`, 'Escalar a 5 réplicas');
+}
+function scaleDown() {
+  const name = document.getElementById('proj-name').value||'webapp';
+  runQuickCmd(`kubectl scale deployment/${name} --replicas=2 -n production`, 'Reducir a 2 réplicas');
+}
+function copyURL(type) {
+  const url = type==='local'?document.getElementById('url-local').textContent:document.getElementById('url-network').textContent;
+  navigator.clipboard.writeText(url).then(()=>notify('📋 URL copiada: '+url, 'info'));
+}
+function copyDockerfile() {
+  navigator.clipboard.writeText(document.getElementById('dockerfile-preview').textContent).then(()=>notify('📋 Dockerfile copiado', 'info'));
+}
+
+function addAccess() {
+  const email = prompt('Email o usuario a agregar:');
+  if(!email)return;
+  state.accessList.push(email);
+  const list = document.getElementById('access-list');
+  const initials = email.slice(0,2).toUpperCase();
+  const div = document.createElement('div');
+  div.className = 'access-item';
+  div.innerHTML = `<div class="access-avatar">${initials}</div><span style="flex:1;color:var(--text);">${email}</span><span class="tag tag-cyan">acceso</span><button class="btn btn-sm btn-danger" onclick="this.parentElement.remove()" style="padding:2px 8px;">Revocar</button>`;
+  list.appendChild(div);
+  notify('✓ Acceso otorgado a: '+email, 'success');
+}
+
+// ==================== UPTIME ====================
+setInterval(()=>{
+  if(state.mode !== 'online') return;
+  const d = Math.floor((Date.now()-state.startTime)/1000);
+  const h = Math.floor(d/3600), m = Math.floor((d%3600)/60);
+  document.getElementById('m-uptime').textContent = `${h}h ${m}m`;
+}, 10000);
+
+// ==================== NOTIFY ====================
+function notify(msg, type='info', duration=4000) {
+  const cont = document.getElementById('notif');
+  const el = document.createElement('div');
+  el.className = `notif-item notif-${type}`;
+  const icons = {success:'✓',error:'✕',info:'ℹ',warn:'⚠'};
+  el.innerHTML = `<span style="color:var(--${type==='warn'?'yellow':type==='error'?'red':type==='success'?'green':'cyan'})">${icons[type]||'ℹ'}</span> <span style="color:var(--text2);">${msg}</span>`;
+  cont.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(100%)';el.style.transition='all .3s';setTimeout(()=>el.remove(),300);}, duration);
+}
+
+// ==================== CHATBOT ====================
+const chatHistory = [];
+let savedApiKey = '';
+
+// Detectar si corre con servidor local (node server.js)
+const IS_SERVER_MODE = (
+  location.protocol !== 'file:' &&
+  !!document.querySelector('meta[name="devdeploy-server"]')
+);
+
+// Al cargar: verificar estado del servidor
+async function checkServerStatus() {
+  if (!IS_SERVER_MODE) return;
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    const tag = document.getElementById('chat-status-tag');
+    const panel = document.getElementById('apikey-panel');
+    const status = document.getElementById('apikey-status');
+    if (d.apiKey) {
+      tag.className = 'tag tag-purple';
+      tag.textContent = '✓ Claude (env)';
+      // Ocultar panel de API key manual — ya está en el entorno
+      panel.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-size:13px;color:var(--green);font-weight:600;">✓ ANTHROPIC_API_KEY detectada desde variable de entorno</span>
+          <span class="tag tag-purple" style="font-size:10px;">${d.apiKeyPreview}</span>
+          <span style="font-size:11px;color:var(--text3);">Claude real activo — no necesitás ingresar ninguna key manualmente.</span>
+        </div>`;
+      notify('✓ ANTHROPIC_API_KEY del entorno — ChatBot listo con Claude real', 'success');
+    } else {
+      tag.className = 'tag tag-yellow';
+      tag.textContent = '⚡ Servidor / sin key';
+      status.innerHTML = '<span style="color:var(--yellow);">Servidor activo pero sin ANTHROPIC_API_KEY. Usá modo local o seteá la variable.</span>';
+    }
+  } catch(e) { /* silencioso */ }
+}
+
+function onApiKeyChange(val) {
+  if (IS_SERVER_MODE) return; // en modo servidor la key viene del entorno
+  savedApiKey = val.trim();
+  const tag = document.getElementById('chat-status-tag');
+  const status = document.getElementById('apikey-status');
+  if(savedApiKey.startsWith('sk-ant')) {
+    tag.className = 'tag tag-purple';
+    tag.textContent = '✓ Claude API';
+    status.innerHTML = '<span style="color:var(--green);">✓ API key válida — usando Claude real.</span>';
+  } else if(savedApiKey.length > 0) {
+    tag.className = 'tag tag-yellow';
+    tag.textContent = '⚠ Key inválida';
+    status.innerHTML = '<span style="color:var(--yellow);">⚠ La key debe empezar con sk-ant-...</span>';
+  } else {
+    tag.className = 'tag tag-green';
+    tag.textContent = '⚡ Local';
+    status.innerHTML = 'ℹ Sin API key: respuestas inteligentes locales. <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--cyan);text-decoration:none;">Obtener API key →</a>';
+  }
+}
+
+function saveApiKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  savedApiKey = val;
+  onApiKeyChange(val);
+  if(val) { notify('🔑 API key guardada (solo en memoria)', 'success'); }
+  else { notify('API key removida — modo local activo', 'info'); }
+}
+
+function toggleKeyVisibility() {
+  const inp = document.getElementById('api-key-input');
+  if(inp) inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+// ===================== LOCAL SMART RESPONSES =====================
+const localKB = [
+  { keys:['deploy','desplegar','servidor','online','iniciar','levantar'],
+    answer:`Para deployar tu webapp con DevDeploy Manager:\n\n1. Subí tus archivos HTML/CSS/JS en la sección **Web Server**\n2. Configurá el nombre y puerto del proyecto\n3. Hacé click en **🚀 Deploy**\n\nEsto ejecuta automáticamente:\n\`\`\`bash\ndocker build -t webapp:latest .\ndocker push localhost:5000/webapp:latest\nkubectl apply -f k8s/\ngit add . && git commit && git push\n\`\`\`\n\nTu app queda disponible en http://localhost:8080 🟢` },
+
+  { keys:['privado','private','autenticaci','acceso restringido','contraseña','password'],
+    answer:`Para activar el **Modo Privado**:\n\n1. Hacé click en el botón **🔒 Privado** en el header\n2. Se aplica automáticamente:\n\`\`\`bash\nkubectl apply -f k8s/auth-secret.yaml\nkubectl apply -f k8s/auth-ingress.yaml\n\`\`\`\n3. En el panel "Control de Acceso" podés agregar usuarios autorizados\n\nSolo las personas en esa lista podrán acceder mediante autenticación HTTP básica.` },
+
+  { keys:['offline','apagar','detener','bajar','parar'],
+    answer:`Para poner el servidor **Offline**:\n\nHacé click en **⛔ Offline** o desde Terminal:\n\`\`\`bash\n# Bajar K8s (sin borrar configuración)\nkubectl scale deployment/webapp --replicas=0 -n production\n\n# Detener contenedor Docker local\ndocker stop webapp\n\n# Remover ingress (acceso externo)\nkubectl delete ingress webapp-ingress -n production\n\`\`\`\nTus datos y configuración quedan preservados. Para volver online: botón **🟢 Online** o Deploy.` },
+
+  { keys:['docker','contenedor','imagen','dockerfile','build'],
+    answer:`**Docker en DevDeploy Manager:**\n\nComandos principales:\n\`\`\`bash\n# Build imagen\ndocker build -t webapp:latest .\n\n# Ver contenedores\ndocker ps -a\n\n# Ver logs\ndocker logs webapp --tail 50 -f\n\n# Stats en tiempo real\ndocker stats webapp\n\n# Entrar al contenedor\ndocker exec -it webapp sh\n\n# Limpiar imágenes no usadas\ndocker system prune -f\n\`\`\`\nEl **Dockerfile** se auto-genera según tus archivos y configuración.` },
+
+  { keys:['kubernetes','k8s','pod','kubectl','deployment','réplica','replica','escalar'],
+    answer:`**Kubernetes en DevDeploy Manager:**\n\n\`\`\`bash\n# Ver pods\nkubectl get pods -n production\n\n# Ver servicios\nkubectl get services -n production\n\n# Escalar (ej: 5 réplicas)\nkubectl scale deployment/webapp --replicas=5 -n production\n\n# Ver logs de un pod\nkubectl logs -f webapp-xxx-yyy -n production\n\n# Reiniciar deployment\nkubectl rollout restart deployment/webapp -n production\n\n# Describir pod (para troubleshooting)\nkubectl describe pod webapp-xxx -n production\n\`\`\`\nLos **manifiestos YAML** se auto-generan en la sección Docker/K8s.` },
+
+  { keys:['github','git','commit','push','pull','repositorio','repo','ci','cd','actions'],
+    answer:`**GitHub en DevDeploy Manager:**\n\n\`\`\`bash\n# Ciclo básico de trabajo\ngit add -A\ngit commit -m "feat: descripción del cambio"\ngit push origin main\n\n# Crear release\ngit tag -a v1.0.0 -m "Release v1.0.0"\ngit push origin v1.0.0\ngh release create v1.0.0 --generate-notes\n\n# Ver historial\ngit log --oneline --graph --all\n\`\`\`\n\nEstructura recomendada:\n- **.github/workflows/** — CI/CD automático\n- **k8s/** — manifiestos Kubernetes\n- **src/** — tus archivos HTML/CSS/JS\n\nCada deploy notifica: **✓ Archivos actualizados en GitHub** ✓` },
+
+  { keys:['aws','amazon','s3','ec2','eks','ecr','lambda','cloudfront'],
+    answer:`**AWS en DevDeploy Manager** (sección Cloud Platforms → 🟠 AWS):\n\n\`\`\`bash\n# Sync archivos a S3\naws s3 sync ./src s3://mi-bucket --delete\n\n# Invalidar caché CloudFront\naws cloudfront create-invalidation \\\n  --distribution-id E123 --paths "/*"\n\n# Login al registry ECR\naws ecr get-login-password | docker login \\\n  --username AWS --password-stdin \\\n  123456.dkr.ecr.us-east-1.amazonaws.com\n\n# Configurar kubectl para EKS\naws eks update-kubeconfig \\\n  --name mi-cluster --region us-east-1\n\`\`\`\nUsá los botones de la sección Cloud para ejecutar cada comando con log visible.` },
+
+  { keys:['gcp','google','cloud run','gke','firebase','gcr','gsutil'],
+    answer:`**GCP en DevDeploy Manager** (sección Cloud Platforms → 🔵 GCP):\n\n\`\`\`bash\n# Deploy a Cloud Run\ngcloud run deploy webapp \\\n  --image gcr.io/PROJECT/webapp \\\n  --platform managed --allow-unauthenticated\n\n# Sync a Google Cloud Storage\ngsutil rsync -r ./src gs://mi-bucket\n\n# Build con Cloud Build\ngcloud builds submit --tag gcr.io/PROJECT/webapp .\n\n# Deploy Firebase Hosting\nfirebase deploy --only hosting\n\n# Configurar GKE\ngcloud container clusters get-credentials \\\n  mi-cluster --region us-central1\n\`\`\`` },
+
+  { keys:['azure','az ','blob','aks','acr','function','app service'],
+    answer:`**Azure en DevDeploy Manager** (sección Cloud Platforms → 🔷 Azure):\n\n\`\`\`bash\n# Build en Azure Container Registry\naz acr build --registry miRegistry \\\n  --image webapp:latest .\n\n# Crear Web App con container\naz webapp create --resource-group mi-rg \\\n  --name mi-webapp \\\n  --deployment-container-image-name webapp:latest\n\n# Subir a Blob Storage (sitio estático)\naz storage blob upload-batch \\\n  -s ./src -d "\$web" \\\n  --account-name miStorage\n\n# Configurar kubectl para AKS\naz aks get-credentials \\\n  --resource-group mi-rg --name mi-aks\n\`\`\`` },
+
+  { keys:['databricks','spark','mlflow','dbfs','cluster','job','notebook','modelo'],
+    answer:`**Databricks en DevDeploy Manager** (sección Cloud → 🔴 Databricks):\n\n\`\`\`bash\n# Configurar CLI\ndatabricks configure --token\n\n# Listar clusters\ndatabricks clusters list --output JSON\n\n# Ejecutar un job\ndatabricks jobs run-now --job-id 12345\n\n# Upload modelo a DBFS\ndatabricks fs cp ./modelo.pkl \\\n  dbfs:/FileStore/modelos/modelo.pkl\n\n# Servir modelo con MLflow\nmlflow models serve \\\n  -m "models:/mi-modelo/Production" \\\n  -p 5001 --no-conda\n\`\`\`` },
+
+  { keys:['mlops','ml','machine learning','modelo','pipeline','entrenamiento','predicci'],
+    answer:`**MLOps en DevDeploy Manager** (sección DevOps/MLOps):\n\n\`\`\`bash\n# 1. Empaquetar modelo\nmlflow models build-docker \\\n  -m "models:/mi-modelo/1" \\\n  -n mi-modelo-server\n\n# 2. Deploy del modelo en K8s\ndocker push localhost:5000/mi-modelo-server:latest\nkubectl apply -f k8s/mlflow-deploy.yaml\n\n# 3. Test del endpoint\ncurl -X POST http://localhost:5001/invocations \\\n  -H "Content-Type: application/json" \\\n  -d \'{"instances": [[1.0, 2.0, 3.0]]}\'\n\n# 4. Ver pods del modelo\nkubectl get pods -n mlops -l app=model-server\n\`\`\`` },
+
+  { keys:['registry','localhost:5000','imagen local','push imagen'],
+    answer:`**Registry local en DevDeploy Manager:**\n\nUsa un registry Docker en localhost:5000 para imágenes privadas:\n\n\`\`\`bash\n# Iniciar el registry (ya incluido en docker-compose.yml)\ndocker run -d -p 5000:5000 --name registry \\\n  --restart always registry:2\n\n# Push al registry local\ndocker tag webapp:latest localhost:5000/webapp:latest\ndocker push localhost:5000/webapp:latest\n\n# Ver imágenes en el registry\ncurl http://localhost:5000/v2/_catalog\n\n# Pull desde el registry\ndocker pull localhost:5000/webapp:latest\n\`\`\`` },
+
+  { keys:['error','falla','no funciona','problema','troubleshoot','debug'],
+    answer:`**Troubleshooting en DevDeploy Manager:**\n\n\`\`\`bash\n# Ver logs del contenedor\ndocker logs webapp --tail 100\n\n# Ver eventos de K8s\nkubectl get events -n production --sort-by=.lastTimestamp\n\n# Describir pod con problemas\nkubectl describe pod <nombre-pod> -n production\n\n# Verificar recursos del cluster\nkubectl top nodes && kubectl top pods -n production\n\n# Reiniciar deployment\nkubectl rollout restart deployment/webapp -n production\n\n# Ver estado del rollout\nkubectl rollout status deployment/webapp -n production\n\`\`\`\n\nUsá la sección **Terminal/Logs** para ver todos los comandos ejecutados.` },
+
+  { keys:['nginx','conf','configurar','config'],
+    answer:`**Configuración nginx para DevDeploy Manager:**\n\n\`\`\`nginx\n# nginx.conf recomendado\nserver {\n    listen 80;\n    server_name localhost;\n    root /usr/share/nginx/html;\n    index index.html;\n\n    # Gzip compression\n    gzip on;\n    gzip_types text/css application/javascript;\n\n    # Cache para assets\n    location ~* \\.(js|css|png|jpg|svg)$ {\n        expires 30d;\n        add_header Cache-Control "public";\n    }\n\n    # SPA support\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n}\n\`\`\`` },
+
+  { keys:['pdf','exportar','documentaci','reporte'],
+    answer:`Para **exportar la documentación PDF** de DevDeploy Manager:\n\n1. Hacé click en el botón **📄 Exportar PDF** en el header\n2. O en la barra inferior del sidebar: botón **PDF**\n\nEl PDF incluye:\n- Objetivo y arquitectura del sistema\n- Comandos Docker y Kubernetes\n- Integración GitHub y CI/CD\n- Estructura de repositorio (best-practices)\n- Comandos de AWS, GCP, Azure, Databricks\n- MLOps y deploy de modelos\n- Mejores prácticas\n\nSe descarga automáticamente como **DevDeploy-Manager-Documentacion.pdf** 📄` },
+
+  { keys:['dominio','domain','disponible','registrar','tld','.com','.ar','.io','whois','ocupado'],
+    answer:`**Gestión de Dominios** (sección 🏢 Web Corporativa → pestaña Dominio):\n\n**¿Cómo saber si un dominio está disponible?**\nUsá el **Verificador de Dominio** integrado — hace consultas DNS-over-HTTPS reales sin backend.\n\n**¿Necesito pagar?**\n- Para web corporativa: **sí**, ~$9/año para .com\n- Para proyectos personales: **no**, usá usuario.github.io o proyecto.pages.dev gratis\n\n**Registrars recomendados:**\n- **Namecheap** — ~$9/año .com, interface clara\n- **Cloudflare Registrar** — precio al costo, DNS gratis incluido\n- **NIC.ar** — dominios .ar y .com.ar oficiales (Argentina, gratis)\n\n**Pasos para registrar:**\n1. Verificar disponibilidad en la sección Dominio\n2. Ir al registrar y pagar\n3. Configurar DNS (pestaña DNS)\n4. Apuntar a tu servidor\n5. Activar SSL (pestaña SSL)` },
+
+  { keys:['dns','nameserver','registro a','mx','txt','spf','dmarc','dkim','propagaci','cloudflare dns'],
+    answer:`**Configuración DNS** (sección 🏢 Web Corporativa → pestaña DNS):\n\n**Registros esenciales:**\n\`\`\`\nA     @    →  IP_DE_TU_SERVIDOR     (dominio raíz)\nA     www  →  IP_DE_TU_SERVIDOR     (con www)\nMX    @    →  mail.tudominio.com    (recibir emails)\nTXT   @    →  v=spf1 mx ~all        (anti-spam)\nTXT   _dmarc → v=DMARC1; p=none;   (anti-phishing)\n\`\`\`\n\n**DNS recomendado: Cloudflare (gratis)**\n- CDN global incluido\n- Proxy anti-DDoS\n- Propagación instantánea (5 min vs 48h otros)\n\n**¿IP dinámica en casa?** Usá Cloudflare Tunnel:\n\`\`\`bash\ncloudflared tunnel create mi-webapp\ncloudflared tunnel route dns mi-webapp tudominio.com\n\`\`\`\nNo necesitás IP pública ni abrir puertos.` },
+
+  { keys:['email corporativo','mail corporativo','email empresa','correo corporativo','zoho','google workspace','mailcow','smtp','imap','mx record','buzón'],
+    answer:`**Email Corporativo** (sección 🏢 Web Corporativa → pestaña Email Corp.):\n\n**Opciones principales:**\n\n🟢 **Zoho Mail Free** — Recomendado para empezar\n- Hasta 5 usuarios gratis\n- 5 GB por buzón\n- Dominio propio\n- Setup en 20-30 minutos\n\n**Pasos rápidos con Zoho:**\n1. Registrarse en zoho.com/mail → Plan Free\n2. Agregar tu dominio\n3. Poner registro TXT de verificación en DNS\n4. Configurar registros MX:\n\`\`\`\nMX @ mx.zoho.com     prioridad 10\nMX @ mx2.zoho.com    prioridad 20\nMX @ mx3.zoho.com    prioridad 50\n\`\`\`\n5. Crear buzones: hola@tudominio.com, info@tudominio.com\n\n💰 **Google Workspace** — Mejor opción paga ($6/user/mes)\n- Gmail corporativo + Drive + Meet\n\n🔧 **Mailcow** — Self-hosted con Docker (avanzado, requiere VPS)` },
+
+  { keys:['ssl','https','certificado','tls','let\'s encrypt','certbot','seguro','candado'],
+    answer:`**SSL / HTTPS Gratuito** (sección 🏢 Web Corporativa → pestaña SSL):\n\n**Opción 1: Cloudflare (más simple)**\nSi tu DNS usa Cloudflare con proxy activo (ícono naranja), el HTTPS es automático — no instalás nada.\n\n**Opción 2: Let's Encrypt + Certbot**\n\`\`\`bash\n# Instalar certbot\napt install certbot python3-certbot-nginx -y\n\n# Obtener certificado\ncertbot --nginx -d tudominio.com -d www.tudominio.com\n\n# Verificar auto-renovación\ncertbot renew --dry-run\n\`\`\`\n\n**Opción 3: cert-manager en Kubernetes**\n\`\`\`bash\nkubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml\n\`\`\`\n\nEl certificado se renueva automáticamente cada 90 días. ✓` },
+
+  { keys:['web corporativa','webapp corporativa','empresa online','presencia web','checklist','wizard','paso a paso','online rápido','lanzo'],
+    answer:`**🏢 Web Corporativa Completa — Paso a Paso**\n\nUsá la sección **Web Corporativa** del sidebar para el wizard interactivo. Resumen rápido:\n\n**Stack recomendado (costo ~$9/año total):**\n- 🌐 Dominio .com → Namecheap (~$9/año)\n- 🔀 DNS → Cloudflare (gratis)\n- 🖥️ Hosting → Cloudflare Pages o self-hosted con DevDeploy\n- 📧 Email → Zoho Mail Free (gratis, hasta 5 cuentas)\n- 🔒 SSL → Let's Encrypt o Cloudflare automático (gratis)\n- 🐙 CI/CD → GitHub Actions (gratis)\n\n**Tiempo estimado total: 2-4 horas** para tener todo online.\n\nEl **Checklist** en la sección Web Corporativa te guía los 20 pasos necesarios para no olvidar nada.` },
+
+  { keys:['cloudflare','tunnel','ddns','ip dinamica','sin ip publica','exponer','ngrok'],
+    answer:`**Exponer tu servidor sin IP pública** con Cloudflare Tunnel:\n\n\`\`\`bash\n# Instalar cloudflared\ncurl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared\nchmod +x cloudflared && sudo mv cloudflared /usr/local/bin/\n\n# Autenticarse\ncloudflared login\n\n# Crear tunnel\ncloudflared tunnel create mi-webapp\n\n# Apuntar al servidor local\ncloudflared tunnel route dns mi-webapp tudominio.com\n\n# Iniciar (apunta al puerto 8080 local)\ncloudflared tunnel run --url http://localhost:8080 mi-webapp\n\`\`\`\n\n✅ Con esto tu app local en localhost:8080 queda accesible en **tudominio.com** sin abrir puertos ni tener IP pública. Cloudflare encripta todo el tráfico automáticamente.` },
+];
+
+function getLocalResponse(msg) {
+  const q = msg.toLowerCase();
+  for(const entry of localKB) {
+    if(entry.keys.some(k => q.includes(k.toLowerCase()))) {
+      return entry.answer;
+    }
+  }
+  return `Entendí tu consulta: **"${msg}"**\n\nNo tengo una respuesta local exacta, pero podés:\n\n• 🔍 Usar los **botones de comandos** en cada sección\n• 💻 Ver la **Terminal** para historial de comandos\n• 📄 Exportar el **PDF** con toda la documentación\n• 🔑 Ingresar tu **API key de Claude** para respuestas completas\n\nTemas que manejo localmente:\n- Docker y Kubernetes\n- GitHub y CI/CD\n- Modos: online / privado / offline\n- AWS, GCP, Azure, Databricks\n- MLOps y deploy de modelos\n- Troubleshooting y configuración`;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if(!msg) return;
+  input.value = '';
+  addMsg(msg, 'user');
+  chatHistory.push({role:'user', content: msg});
+
+  const loadingEl = addMsg('⏳ Procesando...', 'bot', true);
+
+  const systemPrompt = `Sos el asistente de DevDeploy Manager, una aplicación que gestiona servidores web locales usando Docker Desktop, Kubernetes y GitHub. Respondés en español, sos conciso y técnico. Cuando das comandos, usás bloques de código. Te especializás en: gestión de servidores web (HTML/CSS/JS) con Docker+K8s, GitHub CI/CD, Docker, Kubernetes, AWS, GCP, Azure, Databricks, MLOps con MLflow. Modos de acceso: online (público), privado (autenticado), offline. La app usa nginx:alpine y registry local en localhost:5000. También te especializás en web corporativa: registro de dominios (Namecheap, Cloudflare, NIC.ar), configuración DNS (registros A, MX, TXT, SPF, DMARC, DKIM), email corporativo (Zoho Mail gratis, Google Workspace, Mailcow self-hosted con Docker), SSL con Let's Encrypt/Certbot, Cloudflare Tunnel para exponer servidores sin IP pública, y el stack completo para una web corporativa por ~$9/año.`;
+
+  const payload = {
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1000,
+    system: systemPrompt,
+    messages: chatHistory.slice(-10)
+  };
+
+  // ── MODO SERVIDOR: usa /api/chat (proxy con env var) ──────────
+  if (IS_SERVER_MODE) {
+    try {
+      const r = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const data = await r.json();
+      loadingEl.remove();
+      if (data.error) {
+        const errMsg = data.error.message || 'Error de API';
+        addMsg(`⚠️ ${errMsg}<br><br>${formatBotMsg(getLocalResponse(msg))}`, 'bot');
+        chatHistory.push({role:'assistant', content: errMsg});
+        return;
+      }
+      const text = data.content?.[0]?.text || 'Sin respuesta.';
+      chatHistory.push({role:'assistant', content: text});
+      addMsg(formatBotMsg(text), 'bot');
+    } catch(e) {
+      loadingEl.remove();
+      const local = getLocalResponse(msg);
+      chatHistory.push({role:'assistant', content: local});
+      addMsg(`⚠️ <small style="color:var(--yellow)">Proxy no disponible — usando modo local</small><br><br>${formatBotMsg(local)}`, 'bot');
+    }
+    return;
+  }
+
+  // ── MODO ARCHIVO: usa API key manual ─────────────────────────
+  const apiKey = savedApiKey || (document.getElementById('api-key-input')?.value||'').trim();
+
+  if (apiKey && apiKey.startsWith('sk-ant')) {
+    try {
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await r.json();
+      loadingEl.remove();
+      if(data.error) {
+        addMsg(`⚠️ Error API: ${data.error.message}<br><br>${formatBotMsg(getLocalResponse(msg))}`, 'bot');
+        chatHistory.push({role:'assistant', content: data.error.message});
+        return;
+      }
+      const text = data.content?.[0]?.text || 'Sin respuesta.';
+      chatHistory.push({role:'assistant', content: text});
+      addMsg(formatBotMsg(text), 'bot');
+    } catch(e) {
+      loadingEl.remove();
+      const local = getLocalResponse(msg);
+      chatHistory.push({role:'assistant', content: local});
+      addMsg(`⚠️ <small style="color:var(--yellow)">Sin conexión — usando modo local</small><br><br>${formatBotMsg(local)}`, 'bot');
+    }
+  } else {
+    // Respuestas locales inteligentes (sin key)
+    await new Promise(r=>setTimeout(r, 380));
+    loadingEl.remove();
+    const local = getLocalResponse(msg);
+    chatHistory.push({role:'assistant', content: local});
+    addMsg(formatBotMsg(local), 'bot');
+  }
+}
+
+function formatBotMsg(text) {
+  return text
+    .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre>$2</pre>')
+    .replace(/```([\s\S]*?)```/g, '<pre>$1</pre>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+    .replace(/\n/g, '<br>');
+}
+
+function addMsg(text, role, temp=false) {
+  const container = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = `msg msg-${role}`;
+  if(role==='bot') {
+    div.innerHTML = `<div class="msg-label">🤖 DevDeploy Assistant</div>${text}`;
+  } else {
+    div.innerHTML = `<div class="msg-label">👤 Vos</div>${text}`;
+  }
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+function clearChat() {
+  document.getElementById('chat-messages').innerHTML = '';
+  chatHistory.length = 0;
+  addMsg('¡Chat reiniciado! ¿En qué te puedo ayudar con DevDeploy Manager?', 'bot');
+}
+
+// ==================== PDF EXPORT ====================
+async function generatePDF() {
+  notify('📄 Generando documentación PDF...', 'info');
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+    const W=210, ml=18, mr=192, lh=7;
+    let y=20;
+
+    const colors = {
+      dark:[8,12,16], mid:[21,33,51], cyan:[0,217,255],
+      green:[63,185,80], gray:[139,148,158], light:[230,237,243],
+      orange:[255,166,87], purple:[188,140,255]
+    };
+
+    const setColor=(c,is_fill=false)=>{
+      if(is_fill) doc.setFillColor(...c); else doc.setTextColor(...c);
+    };
+    const addLine=(text,size=10,color=colors.light,bold=false,indent=ml)=>{
+      doc.setFontSize(size);
+      setColor(color);
+      doc.setFont('helvetica', bold?'bold':'normal');
+      doc.text(text, indent, y);
+      y+=lh;
+    };
+    const addSection=(title)=>{
+      y+=4;
+      doc.setFillColor(...colors.mid);
+      doc.roundedRect(ml, y-5, mr-ml, 10, 2, 2, 'F');
+      doc.setTextColor(...colors.cyan);
+      doc.setFontSize(11);
+      doc.setFont('helvetica','bold');
+      doc.text(title, ml+3, y+1);
+      y+=10;
+    };
+    const addCode=(lines)=>{
+      doc.setFillColor(5,10,15);
+      doc.roundedRect(ml, y-3, mr-ml, lines.length*5.5+6, 2, 2, 'F');
+      doc.setFontSize(8);
+      doc.setFont('courier','normal');
+      doc.setTextColor(...colors.green);
+      lines.forEach(l=>{doc.text(l,ml+4,y+1);y+=5.5;});
+      y+=5;
+    };
+    const newPage=()=>{doc.addPage();y=20;};
+    const checkPage=(needed=30)=>{if(y+needed>280)newPage();};
+
+    // Cover page
+    doc.setFillColor(...colors.dark);
+    doc.rect(0,0,W,297,'F');
+    doc.setFillColor(...colors.mid);
+    doc.roundedRect(14,30,182,80,4,4,'F');
+    doc.setFillColor(...colors.cyan);
+    doc.rect(14,30,4,80,'F');
+    setColor(colors.cyan);
+    doc.setFontSize(28);doc.setFont('helvetica','bold');
+    doc.text('DevDeploy Manager',20,60);
+    doc.setFontSize(14);setColor(colors.light);
+    doc.text('Documentación Técnica Completa',20,72);
+    doc.setFontSize(10);setColor(colors.gray);
+    doc.text('Docker · Kubernetes · GitHub · AWS · GCP · Azure · Databricks · MLOps',20,84);
+    doc.text('Versión 2.0 — '+new Date().toLocaleDateString('es-AR'),20,92);
+
+    // TOC
+    y=135;
+    setColor(colors.cyan);doc.setFontSize(13);doc.setFont('helvetica','bold');
+    doc.text('Tabla de Contenidos',20,y);y+=10;
+    const toc=[
+      'Objetivo Principal — Servidor Web Local',
+      'Arquitectura del Sistema',
+      'Gestión Docker y Kubernetes',
+      'Integración GitHub y CI/CD',
+      'Modos de Acceso: Online / Privado / Offline',
+      'Cloud: AWS, GCP, Azure, Databricks',
+      'DevOps y MLOps',
+      'Comandos de Referencia',
+      'Mejores Prácticas'
+    ];
+    toc.forEach((t,i)=>{
+      setColor(colors.gray);doc.setFontSize(9);doc.setFont('helvetica','normal');
+      doc.text(`${i+1}. ${t}`,24,y);y+=6;
+    });
+
+    // Footer cover
+    setColor(colors.gray);doc.setFontSize(8);
+    doc.text('Generado por DevDeploy Manager — '+new Date().toLocaleString('es-AR'),ml,285);
+
+    newPage();
+
+    // Section 1: Overview
+    doc.setFillColor(...colors.dark);doc.rect(0,0,W,297,'F');
+    setColor(colors.cyan);doc.setFontSize(16);doc.setFont('helvetica','bold');
+    doc.text('1. Objetivo Principal',ml,y);y+=12;
+
+    doc.setFillColor(...colors.mid);doc.roundedRect(ml,y-4,mr-ml,28,2,2,'F');
+    setColor(colors.light);doc.setFontSize(10);doc.setFont('helvetica','normal');
+    const desc='DevDeploy Manager permite gestionar y desplegar aplicaciones web (HTML, CSS, JS y similares) de forma local usando Docker Desktop, Kubernetes y GitHub, sin necesidad de servicios de cloud. Incluye visualización en tiempo real de todos los comandos ejecutados.';
+    const wrapped=doc.splitTextToSize(desc,mr-ml-6);
+    wrapped.forEach(l=>{doc.text(l,ml+4,y);y+=6;});
+    y+=8;
+
+    addSection('Características Principales');
+    const features=[
+      '🌐  Servidor web local con Docker + Kubernetes, accesible en red local',
+      '📋  Visualización en tiempo real de todos los comandos ejecutados',
+      '🔒  Tres modos de acceso: Online (público), Privado (autenticado), Offline',
+      '🐙  Integración completa con GitHub: push, pull, CI/CD, releases',
+      '🐳  Gestión de Docker: build, run, push al registry local',
+      '☸️  Kubernetes: deployments, services, ingress, escalado automático',
+      '☁️  Soporte para AWS, GCP, Azure y Databricks',
+      '🧠  MLOps: deploy de modelos con MLflow',
+      '🤖  Chatbot IA integrado para asistencia contextual',
+    ];
+    features.forEach(f=>addLine(f,9,colors.light));
+
+    checkPage();
+    addSection('Arquitectura del Sistema');
+    addCode([
+      '  [Archivos HTML/CSS/JS]',
+      '         ↓',
+      '  docker build -t webapp:latest .',
+      '  docker push localhost:5000/webapp:latest',
+      '         ↓',
+      '  kubectl apply -f k8s/deployment.yaml  ←── 3 réplicas',
+      '  kubectl apply -f k8s/service.yaml     ←── NodePort :8080',
+      '  kubectl apply -f k8s/ingress.yaml     ←── Acceso externo',
+      '         ↓',
+      '  git add . && git commit && git push   ←── GitHub sync',
+      '         ↓',
+      '  http://localhost:8080  ←── Servidor accesible en red local',
+    ]);
+
+    newPage();
+    doc.setFillColor(...colors.dark);doc.rect(0,0,W,297,'F');
+    setColor(colors.cyan);doc.setFontSize(16);doc.setFont('helvetica','bold');
+    doc.text('2. Comandos Docker y Kubernetes',ml,y);y+=12;
+
+    addSection('Docker — Comandos de Deploy');
+    addCode([
+      '# Construir imagen',
+      'docker build -t webapp:latest -f Dockerfile .',
+      '',
+      '# Push al registry local',
+      'docker tag webapp:latest localhost:5000/webapp:latest',
+      'docker push localhost:5000/webapp:latest',
+      '',
+      '# Iniciar servidor web',
+      'docker run -d -p 8080:80 --name webapp \\',
+      '  --restart always localhost:5000/webapp:latest',
+      '',
+      '# Verificar estado',
+      'docker ps -a && docker logs webapp --tail 20',
+    ]);
+
+    addSection('Kubernetes — Deploy Completo');
+    addCode([
+      '# Aplicar todos los manifiestos',
+      'kubectl apply -f k8s/',
+      '',
+      '# Verificar rollout',
+      'kubectl rollout status deployment/webapp -n production',
+      '',
+      '# Ver pods',
+      'kubectl get pods -n production -l app=webapp',
+      '',
+      '# Escalar',
+      'kubectl scale deployment/webapp --replicas=5 -n production',
+      '',
+      '# Modo offline',
+      'kubectl scale deployment/webapp --replicas=0 -n production',
+    ]);
+
+    addSection('GitHub — Sincronización');
+    addCode([
+      'git add -A',
+      'git commit -m "feat: actualización webapp"',
+      'git push origin main',
+      '',
+      '# Crear release',
+      'git tag -a v1.0.0 -m "Release v1.0.0"',
+      'git push origin v1.0.0',
+      'gh release create v1.0.0 --generate-notes',
+    ]);
+
+    newPage();
+    doc.setFillColor(...colors.dark);doc.rect(0,0,W,297,'F');
+    setColor(colors.cyan);doc.setFontSize(16);doc.setFont('helvetica','bold');
+    doc.text('3. Cloud Platforms',ml,y);y+=12;
+
+    addSection('AWS — Comandos Esenciales');
+    addCode([
+      '# Sync a S3',
+      'aws s3 sync ./src s3://mi-webapp-bucket --delete',
+      '# CloudFront invalidation',
+      'aws cloudfront create-invalidation --distribution-id E123 --paths "/*"',
+      '# Login ECR + push',
+      'aws ecr get-login-password | docker login --username AWS \\',
+      '  --password-stdin 123456.dkr.ecr.us-east-1.amazonaws.com',
+      '# Configurar EKS',
+      'aws eks update-kubeconfig --name mi-cluster --region us-east-1',
+    ]);
+
+    addSection('GCP — Comandos Esenciales');
+    addCode([
+      '# Deploy Cloud Run',
+      'gcloud run deploy webapp --image gcr.io/PROJECT/webapp \\',
+      '  --platform managed --allow-unauthenticated',
+      '# Sync GCS',
+      'gsutil rsync -r ./src gs://mi-webapp-bucket',
+      '# Build en Cloud Build',
+      'gcloud builds submit --tag gcr.io/PROJECT/webapp .',
+      '# Firebase deploy',
+      'firebase deploy --only hosting',
+    ]);
+
+    addSection('Azure — Comandos Esenciales');
+    addCode([
+      '# Build en ACR',
+      'az acr build --registry miRegistry --image webapp:latest .',
+      '# Web App deploy',
+      'az webapp create --resource-group mi-rg --name mi-webapp \\',
+      '  --deployment-container-image-name webapp:latest',
+      '# Blob Storage sync',
+      'az storage blob upload-batch -s ./src -d "$web" \\',
+      '  --account-name miStorage',
+    ]);
+
+    addSection('Databricks — Comandos Esenciales');
+    addCode([
+      '# Listar clusters',
+      'databricks clusters list --output JSON',
+      '# Ejecutar job',
+      'databricks jobs run-now --job-id 12345',
+      '# Upload a DBFS',
+      'databricks fs cp ./modelo.pkl dbfs:/FileStore/modelos/',
+      '# Servir modelo MLflow',
+      'mlflow models serve -m "models:/mi-modelo/Production" -p 5001',
+    ]);
+
+    newPage();
+    doc.setFillColor(...colors.dark);doc.rect(0,0,W,297,'F');
+    setColor(colors.cyan);doc.setFontSize(16);doc.setFont('helvetica','bold');
+    doc.text('4. Estructura de Repositorio (Best Practices)',ml,y);y+=12;
+
+    addCode([
+      'mi-webapp/',
+      '├── .github/',
+      '│   └── workflows/',
+      '│       ├── ci-cd.yml      # Pipeline CI/CD automático',
+      '│       └── deploy.yml     # Deploy al cambiar main',
+      '├── k8s/',
+      '│   ├── namespace.yaml     # Namespace production',
+      '│   ├── deployment.yaml    # Deployment con 3 réplicas',
+      '│   ├── service.yaml       # Service NodePort',
+      '│   ├── ingress.yaml       # Ingress controller',
+      '│   └── configmap.yaml     # Configuraciones',
+      '├── src/',
+      '│   ├── index.html         # Punto de entrada',
+      '│   ├── styles.css         # Estilos',
+      '│   └── app.js             # JavaScript',
+      '├── Dockerfile             # Imagen Docker',
+      '├── docker-compose.yml     # Compose local',
+      '├── nginx.conf             # Config nginx',
+      '├── .gitignore             # Archivos ignorados',
+      '└── README.md              # Documentación del proyecto',
+    ]);
+
+    addSection('Mejores Prácticas');
+    const bps=[
+      '✓  Usar nginx:alpine para imágenes mínimas (< 25MB)',
+      '✓  Siempre definir HEALTHCHECK en Dockerfile',
+      '✓  Usar --restart always en contenedores de producción',
+      '✓  Definir resource requests y limits en K8s',
+      '✓  Usar Semantic Versioning (v1.2.3) para releases',
+      '✓  Nunca commitear secretos — usar K8s Secrets o Vault',
+      '✓  Usar namespaces en K8s para separar ambientes',
+      '✓  Configurar liveness y readiness probes en K8s',
+      '✓  Registry local en localhost:5000 para imágenes privadas',
+      '✓  GitHub Actions para CI/CD automático en push a main',
+    ];
+    bps.forEach(b=>addLine(b,9,colors.light));
+
+    // Footer all pages
+    const totalPages = doc.internal.getNumberOfPages();
+    for(let i=1;i<=totalPages;i++){
+      doc.setPage(i);
+      doc.setFillColor(...colors.mid);
+      doc.rect(0,287,W,10,'F');
+      doc.setTextColor(...colors.gray);
+      doc.setFontSize(7);doc.setFont('helvetica','normal');
+      doc.text('DevDeploy Manager v2.0 — Documentación Técnica',ml,293);
+      doc.text(`Pág ${i} / ${totalPages}`,W-20,293);
+    }
+
+    doc.save('DevDeploy-Manager-Documentacion.pdf');
+    notify('✓ PDF exportado: DevDeploy-Manager-Documentacion.pdf', 'success');
+  } catch(err) {
+    notify('Error generando PDF: '+err.message, 'error');
+  }
+}
+
+// ==================== CORPORATE TAB SWITCHER ====================
+function switchCorpTab(targetId, el) {
+  document.querySelectorAll('#corp-tabs .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#s-corporate .tab-content').forEach(c=>c.classList.remove('active'));
+  const target = document.getElementById(targetId);
+  if(target) target.classList.add('active');
+}
+
+// ==================== DOMAIN CHECKER ====================
+async function checkDomain(domain) {
+  // Use DNS-over-HTTPS (Google) — works from browser, no backend needed
+  try {
+    const r = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=A`, {cache:'no-cache'});
+    const d = await r.json();
+    // If Status==0 and has Answer → domain has DNS records → taken
+    // If Status==3 (NXDOMAIN) → no DNS → likely available
+    if (d.Status === 3 || !d.Answer) return 'available';
+    if (d.Status === 0 && d.Answer && d.Answer.length > 0) return 'taken';
+    return 'unknown';
+  } catch(e) {
+    return 'unknown';
+  }
+}
+
+async function checkAllTLDs() {
+  const base = document.getElementById('domain-input').value.trim().replace(/\s+/g,'').toLowerCase();
+  if(!base){ notify('Ingresá un nombre de dominio', 'warn'); return; }
+
+  const checkedBoxes = Array.from(document.querySelectorAll('#tld-selector input[type=checkbox]:checked')).map(cb=>cb.value);
+  if(!checkedBoxes.length){ notify('Seleccioná al menos un TLD', 'warn'); return; }
+
+  const resultsEl = document.getElementById('domain-results');
+  resultsEl.innerHTML = `<div class="domain-result domain-checking">🔍 Verificando ${checkedBoxes.length} dominios...</div>`;
+
+  const results = [];
+  for(const tld of checkedBoxes) {
+    const full = base + tld;
+    resultsEl.innerHTML = `<div class="domain-result domain-checking">🔍 Verificando ${full}...</div>`;
+    const status = await checkDomain(full);
+    results.push({full, tld, status});
+  }
+
+  // Render all results
+  resultsEl.innerHTML = results.map(r => {
+    if(r.status === 'available') {
+      return `<div class="domain-result domain-available" style="margin-bottom:6px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span>🟢 <b>${r.full}</b> — probablemente disponible</span>
+          <div style="display:flex;gap:6px;">
+            <a href="https://www.namecheap.com/domains/registration/results/?domain=${r.full}" target="_blank" class="btn btn-sm btn-success" style="padding:2px 8px;font-size:10px;">Registrar en Namecheap →</a>
+            <a href="https://www.cloudflare.com/products/registrar/" target="_blank" class="btn btn-sm btn-ghost" style="padding:2px 8px;font-size:10px;">Cloudflare →</a>
+          </div>
+        </div>
+        <div style="font-size:10px;margin-top:4px;opacity:.8;">Sin registros DNS detectados — verificá en el registrar para confirmar disponibilidad final</div>
+      </div>`;
+    } else if(r.status === 'taken') {
+      return `<div class="domain-result domain-taken" style="margin-bottom:6px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span>🔴 <b>${r.full}</b> — ocupado (DNS activo)</span>
+          <a href="https://lookup.icann.org/lookup?name=${r.full}" target="_blank" class="btn btn-sm btn-ghost" style="padding:2px 8px;font-size:10px;">Ver WHOIS →</a>
+        </div>
+      </div>`;
+    } else {
+      return `<div class="domain-result domain-unknown" style="margin-bottom:6px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span>🟡 <b>${r.full}</b> — estado incierto (verificar manualmente)</span>
+          <a href="https://lookup.icann.org/lookup?name=${r.full}" target="_blank" class="btn btn-sm btn-ghost" style="padding:2px 8px;font-size:10px;">Ver WHOIS →</a>
+        </div>
+      </div>`;
+    }
+  }).join('');
+
+  const avail = results.filter(r=>r.status==='available').length;
+  notify(`✓ Verificación completa: ${avail} disponibles de ${results.length}`, avail>0?'success':'info');
+}
+
+// ==================== CORPORATE WIZARD ====================
+function startCorporateWizard() {
+  showSection('corporate');
+  switchCorpTab('ct-domain', document.querySelector('#corp-tabs .tab'));
+  // Animate progress bars
+  const steps = ['wp1','wp2','wp3','wp4','wp5'];
+  steps.forEach((id,i)=>{
+    setTimeout(()=>{
+      document.getElementById(id).style.width = '100%';
+      document.getElementById('corp-progress-tag').textContent = `Paso ${i+1}/5`;
+    }, i*600);
+  });
+  notify('🏢 Wizard corporativo iniciado — seguí los pasos en las pestañas', 'success');
+  // Initialize checklist
+  initChecklist();
+}
+
+// ==================== CHECKLIST ====================
+const CHECKLIST_ITEMS = [
+  {cat:'🌐 Dominio', text:'Elegir nombre de dominio disponible'},
+  {cat:'🌐 Dominio', text:'Registrar dominio (.com / .ar / .io)'},
+  {cat:'🔀 DNS', text:'Apuntar dominio a Cloudflare DNS'},
+  {cat:'🔀 DNS', text:'Configurar registros A / CNAME'},
+  {cat:'🔀 DNS', text:'Activar proxy Cloudflare (naranja)'},
+  {cat:'🖥️ Hosting', text:'Preparar archivos HTML/CSS/JS'},
+  {cat:'🖥️ Hosting', text:'Deploy con DevDeploy Manager'},
+  {cat:'🖥️ Hosting', text:'Verificar acceso desde dominio propio'},
+  {cat:'📧 Email', text:'Crear cuenta Zoho Mail / Google Workspace'},
+  {cat:'📧 Email', text:'Agregar dominio en panel de email'},
+  {cat:'📧 Email', text:'Agregar registro TXT de verificación en DNS'},
+  {cat:'📧 Email', text:'Configurar registros MX en DNS'},
+  {cat:'📧 Email', text:'Configurar SPF (TXT v=spf1...)'},
+  {cat:'📧 Email', text:'Configurar DKIM (TXT _domainkey)'},
+  {cat:'📧 Email', text:'Configurar DMARC (TXT _dmarc)'},
+  {cat:'🔒 SSL', text:'Verificar HTTPS activo en el dominio'},
+  {cat:'🔒 SSL', text:'Redirigir HTTP → HTTPS (301)'},
+  {cat:'🐙 GitHub', text:'Subir código al repositorio'},
+  {cat:'🐙 GitHub', text:'Configurar GitHub Actions CI/CD'},
+  {cat:'✅ Final', text:'Probar formulario de contacto con email corp.'},
+];
+
+let checklistState = {};
+
+function initChecklist() {
+  const container = document.getElementById('checklist-items');
+  if(!container) return;
+  container.innerHTML = CHECKLIST_ITEMS.map((item,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);cursor:pointer;" onclick="toggleCheck(${i})" id="cl-${i}">
+      <div id="clbox-${i}" style="width:18px;height:18px;border-radius:4px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;transition:all .2s;"></div>
+      <div style="flex:1;">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);">${item.cat}</div>
+        <div style="font-size:12px;color:var(--text2);" id="cltext-${i}">${item.text}</div>
+      </div>
+    </div>`).join('');
+  updateChecklistProgress();
+}
+
+function toggleCheck(i) {
+  checklistState[i] = !checklistState[i];
+  const box = document.getElementById('clbox-'+i);
+  const text = document.getElementById('cltext-'+i);
+  const row = document.getElementById('cl-'+i);
+  if(checklistState[i]) {
+    box.innerHTML = '✓';
+    box.style.background = '#3fb95022';
+    box.style.color = 'var(--green)';
+    box.style.borderColor = 'var(--green)';
+    text.style.textDecoration = 'line-through';
+    text.style.color = 'var(--text3)';
+    row.style.borderColor = '#3fb95030';
+  } else {
+    box.innerHTML = '';
+    box.style.background = '';
+    box.style.color = '';
+    box.style.borderColor = 'var(--border2)';
+    text.style.textDecoration = '';
+    text.style.color = 'var(--text2)';
+    row.style.borderColor = 'var(--border)';
+  }
+  updateChecklistProgress();
+}
+
+function updateChecklistProgress() {
+  const done = Object.values(checklistState).filter(Boolean).length;
+  const total = CHECKLIST_ITEMS.length;
+  const pct = Math.round(done/total*100);
+  const bar = document.getElementById('checklist-bar');
+  const prog = document.getElementById('checklist-progress');
+  if(bar) bar.style.width = pct+'%';
+  if(prog) prog.textContent = `${done} / ${total} completados`;
+  if(done===total && total>0) notify('🏆 ¡Web corporativa completamente configurada!', 'success');
+}
+
+function resetChecklist() {
+  checklistState = {};
+  initChecklist();
+}
+document.getElementById('proj-name').addEventListener('input', updateDockerfile);
+document.getElementById('proj-image').addEventListener('change', updateDockerfile);
+document.getElementById('proj-port').addEventListener('input', ()=>{
+  const p = document.getElementById('proj-port').value;
+  document.getElementById('url-local').textContent = 'http://localhost:'+p;
+  document.getElementById('url-network').textContent = 'http://192.168.1.100:'+p;
+  document.getElementById('global-url').textContent = 'http://localhost:'+p;
+  document.getElementById('m-port').textContent = p;
+  updateDockerfile();
+});
+
+// Welcome notification
+setTimeout(()=>notify('🚀 DevDeploy Manager listo — hacé click en Deploy para comenzar', 'success'), 800);
+setTimeout(()=>notify('💡 Subí tus archivos HTML en "Web Server" y hacé Deploy', 'info'), 2500);
+// Verificar estado del servidor (solo si corre con node server.js)
+setTimeout(()=>checkServerStatus(), 1000);
+// Init checklist silencioso
+setTimeout(()=>initChecklist(), 500);
+</script>
+</body>
+</html>
