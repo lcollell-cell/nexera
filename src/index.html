@@ -1461,14 +1461,14 @@ body.theme-light .hero-pill{background:rgba(10,37,64,.04) !important;border-colo
         <div style="margin-bottom:12px;"><label class="form-label">EMAIL *</label><input class="form-input" type="email" id="ctc-email" placeholder="juan@empresa.com"></div>
         <div style="margin-bottom:12px;"><label class="form-label">EMPRESA / OCUPACIÓN</label><input class="form-input" type="text" id="ctc-empresa" placeholder="Empresa SA"></div>
         <div style="margin-bottom:16px;"><label class="form-label">CONSULTA *</label><textarea class="form-input" id="ctc-mensaje" rows="4" style="resize:vertical;">Buenas tardes, quiero información de sus servicios. Mi contacto es </textarea></div>
-        <button onclick="enviarContacto()" class="btn-calc" style="width:100%;">Enviar a info@nexeraconsulting.com</button>
+        <button onclick="enviarContacto()" class="btn-calc" style="width:100%;">Enviar a <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="1970777f7659777c617c6b787a76776a6c756d70777e377a7674">[email&#160;protected]</a></button>
         <div id="ctc-status" style="margin-top:10px;text-align:center;font-size:12px;min-height:18px;"></div>
       </div>
       <div style="display:flex;flex-direction:column;gap:16px;">
         <div style="background:var(--surface-2);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:24px;">
           <h4 style="font-family:var(--font-display);font-weight:700;margin-bottom:16px;color:var(--accent);font-size:14px;">Información de Contacto</h4>
           <div style="display:flex;flex-direction:column;gap:10px;">
-            <div style="display:flex;gap:10px;padding:10px;background:var(--glass);border-radius:var(--radius);"><span style="font-size:15px;">✉</span><div><div style="font-size:10px;color:var(--text-muted);margin-bottom:1px;">EMAIL</div><div style="font-size:13px;color:var(--accent);">info@nexeraconsulting.com</div></div></div>
+            <div style="display:flex;gap:10px;padding:10px;background:var(--glass);border-radius:var(--radius);"><span style="font-size:15px;">✉</span><div><div style="font-size:10px;color:var(--text-muted);margin-bottom:1px;">EMAIL</div><div style="font-size:13px;color:var(--accent);"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8ae3e4ece5cae4eff2eff8ebe9e5e4f9ffe6fee3e4eda4e9e5e7">[email&#160;protected]</a></div></div></div>
             <div style="display:flex;gap:10px;padding:10px;background:var(--glass);border-radius:var(--radius);"><span style="font-size:15px;">☎</span><div><div style="font-size:10px;color:var(--text-muted);margin-bottom:1px;">ARGENTINA</div><div style="font-size:12px;">+54 2974 62 5804 / +54 911 2872 3272</div></div></div>
             <div style="display:flex;gap:10px;padding:10px;background:var(--glass);border-radius:var(--radius);"><span style="font-size:15px;">☎</span><div><div style="font-size:10px;color:var(--text-muted);margin-bottom:1px;">ESPAÑA</div><div style="font-size:12px;">+34 672 22 0224</div></div></div>
           </div>
@@ -1562,7 +1562,7 @@ body.theme-light .hero-pill{background:rgba(10,37,64,.04) !important;border-colo
   </div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ═══════════════════════════════════════════════════════════
 // DATA
 // ═══════════════════════════════════════════════════════════
@@ -2470,16 +2470,7 @@ function doLogin(){
 // ═══════════════════════════════════════════════════════════
 // MULTILANG
 // ═══════════════════════════════════════════════════════════
-const i18n={
-  es:{welcome:'Bienvenido',calc:'Calculadoras',files:'Archivos'},
-  en:{welcome:'Welcome',calc:'Calculators',files:'Files'},
-  fr:{welcome:'Bienvenue',calc:'Calculateurs',files:'Fichiers'},
-  pt:{welcome:'Bem-vindo',calc:'Calculadoras',files:'Arquivos'},
-};
-function changeLang(lang){
-  localStorage.setItem('nexera_lang',lang);
-  toast('info',`Idioma cambiado: ${lang.toUpperCase()}`);
-}
+// i18n handled below
 
 // ═══════════════════════════════════════════════════════════
 // TOAST
@@ -2494,9 +2485,7 @@ function toast(type, msg){
   setTimeout(()=>el.remove(),3000);
 }
 
-// Init
-const savedLang = localStorage.getItem('nexera_lang')||'es';
-document.querySelector('.lang-select').value=savedLang;
+// Init handled at end of script
 
 // ═══ CONTACT FORM ═══
 function enviarContacto(){
@@ -2571,6 +2560,27 @@ setTimeout(()=>{ try{applyTranslations(savedLang);}catch(e){} },120);
 // Alt+T theme shortcut
 document.addEventListener('keydown',e=>{ if(e.altKey&&e.key==='t')toggleTheme(); });
 
+// ═══ LANGUAGE / i18n ═══
+const langLabels = {es:'Español',en:'English',fr:'Français',pt:'Português'};
+function changeLang(lang){
+  localStorage.setItem('nexera_lang',lang);
+  // Sync both selects
+  const d=document.getElementById('lang-desktop');
+  const m=document.getElementById('mob-lang');
+  if(d) d.value=lang;
+  if(m) m.value=lang;
+  toast('info','Idioma: '+( langLabels[lang]||lang ));
+}
+// Stub so try-catch in init doesn't break
+function applyTranslations(lang){ changeLang(lang); }
+
+// ═══ THEME ═══
+let isDarkTheme=true;
+function toggleTheme(){
+  isDarkTheme=!isDarkTheme;
+  document.body.classList.toggle('theme-light',!isDarkTheme);
+}
+
 </script>
 
 <!-- ═════════════ MOBILE OVERLAY + DRAWER ═════════════ -->
@@ -2610,10 +2620,3 @@ document.addEventListener('keydown',e=>{ if(e.altKey&&e.key==='t')toggleTheme();
         <option value="fr">FR — Français</option>
         <option value="pt">PT — Português</option>
       </select>
-    </div>
-    <button onclick="toggleTheme();closeMobileMenu();" style="width:100%;padding:8px;background:rgba(255,255,255,.05);border:1px solid var(--glass-border);border-radius:6px;color:var(--text-secondary);font-family:var(--font-display);font-size:11px;cursor:pointer;text-align:left;">Cambiar tema (claro / oscuro)</button>
-  </div>
-</div>
-
-</body>
-</html>
